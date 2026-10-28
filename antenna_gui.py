@@ -12,7 +12,7 @@ import os
 import csv
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.widgets import Slider, Button, TextBox
+from matplotlib.widgets import Slider, Button, TextBox, RadioButtons
 
 # --------------------------------------------------------------------------
 # FIX: matplotlib bug where ResizeEvent has no 'inaxes' attribute but
@@ -39,7 +39,8 @@ try:
         total_pattern,
         compute_directivity,
         compute_hpbw,
-        generate_theoretical_csv
+        generate_theoretical_csv,
+        get_taper_weights
     )
 except ImportError:
     C0 = 299792458.0
@@ -159,6 +160,8 @@ class AntennaDashboard:
         self.beta_deg = 0.0
         self.null_angle_slider_val = 60.0
         self.null_list = []
+        self.taper = 'uniform'          # 'uniform' | 'chebyshev' | 'binomial'
+        self.chebyshev_sll = 30.0       # Dolph-Chebyshev SLL target (dB)
 
         # CSV file paths
         self.theory_csv_path = "theoretical_pattern.csv"
@@ -220,25 +223,36 @@ class AntennaDashboard:
         self.btn_clear_null = Button(ax_bclr, 'Clear Nulls',
                                      color='lightcoral', hovercolor='salmon')
 
+        # Amplitude Taper RadioButtons
+        self.fig.text(0.80, 0.62, "Amplitude Taper:", fontsize=8, fontweight='bold')
+        ax_taper = self.fig.add_axes([0.80, 0.52, 0.16, 0.09], facecolor='lightyellow')
+        self.radio_taper = RadioButtons(
+            ax_taper,
+            labels=('Uniform', 'Chebyshev 30dB', 'Binomial'),
+            active=0
+        )
+        for lbl in self.radio_taper.labels:
+            lbl.set_fontsize(8)
+
         # ------------------------------------------------------------------
         # CSV Overlay Section
         # ------------------------------------------------------------------
-        self.fig.text(0.80, 0.58, "Load & Compare CSVs:", fontsize=9, fontweight='bold')
+        self.fig.text(0.80, 0.50, "Load & Compare CSVs:", fontsize=9, fontweight='bold')
 
-        ax_tt = self.fig.add_axes([0.855, 0.52, 0.105, 0.03])
+        ax_tt = self.fig.add_axes([0.855, 0.44, 0.105, 0.03])
         self.txt_theory = TextBox(ax_tt, 'Theory: ', initial=self.theory_csv_path)
 
-        ax_ts = self.fig.add_axes([0.855, 0.46, 0.105, 0.03])
+        ax_ts = self.fig.add_axes([0.855, 0.38, 0.105, 0.03])
         self.txt_sim = TextBox(ax_ts, 'Sim:    ', initial=self.sim_csv_path)
 
-        ax_te = self.fig.add_axes([0.855, 0.40, 0.105, 0.03])
+        ax_te = self.fig.add_axes([0.855, 0.32, 0.105, 0.03])
         self.txt_emp = TextBox(ax_te, 'Empiric:', initial=self.emp_csv_path)
 
-        ax_bov = self.fig.add_axes([0.80, 0.33, 0.16, 0.038])
+        ax_bov = self.fig.add_axes([0.80, 0.25, 0.16, 0.038])
         self.btn_overlay = Button(ax_bov, 'Plot Overlay',
                                   color='palegreen', hovercolor='limegreen')
 
-        ax_brc = self.fig.add_axes([0.80, 0.27, 0.16, 0.035])
+        ax_brc = self.fig.add_axes([0.80, 0.19, 0.16, 0.035])
         self.btn_recalc = Button(ax_brc, 'Update Theory CSV',
                                  color='thistle', hovercolor='violet')
 
@@ -262,6 +276,7 @@ class AntennaDashboard:
         self.btn_clear_null.on_clicked(self.on_clear_nulls)
         self.btn_overlay.on_clicked(self.on_plot_overlay)
         self.btn_recalc.on_clicked(self.on_update_theory_csv)
+        self.radio_taper.on_clicked(self.on_taper_change)
 
         # Initial draw
         self.update_main_plot()
@@ -296,6 +311,18 @@ class AntennaDashboard:
         self.on_plot_overlay(None)
 
     # --------------------------------------------------------------------------
+    # Taper Callback
+    # --------------------------------------------------------------------------
+    def on_taper_change(self, label):
+        taper_map = {
+            'Uniform':          'uniform',
+            'Chebyshev 30dB':   'chebyshev',
+            'Binomial':         'binomial',
+        }
+        self.taper = taper_map.get(label, 'uniform')
+        self.update_main_plot()
+
+    # --------------------------------------------------------------------------
     # Main Plot Update
     # --------------------------------------------------------------------------
     def update_main_plot(self):
@@ -309,7 +336,7 @@ class AntennaDashboard:
         theta = np.linspace(0.0, 2.0 * np.pi, 3600)
         theta_eval = np.where(theta <= np.pi, theta, 2.0 * np.pi - theta)
 
-        pat = total_pattern(theta_eval, N=self.N, d=d_m, beta=beta_rad)
+        pat = total_pattern(theta_eval, N=self.N, d=d_m, beta=beta_rad, taper=self.taper)
 
         # Apply Schelkunoff nulls
         if self.null_list:

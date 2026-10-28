@@ -11,6 +11,9 @@ import os
 import csv
 import numpy as np
 from scipy import integrate
+from scipy.special import comb as scipy_comb
+from scipy.signal.windows import chebwin
+from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
 import matplotlib.pyplot as plt
 
 # ------------------------------------------------------------------------------
@@ -55,71 +58,117 @@ def element_factor(theta):
 
 
 # ------------------------------------------------------------------------------
-# 3. Array Factor: N-Element Uniform Linear Array (ULA)
+# 3a. Amplitude Taper Weight Generators
 # ------------------------------------------------------------------------------
-def array_factor(theta, N=4, d=None, beta=0.0):
+def get_taper_weights(N, taper='uniform', sll_db=30.0):
     """
-    Computes normalized Array Factor AF(theta) for an N-element ULA.
-    Formula: AF(psi) = sin(N * psi / 2) / (N * sin(psi / 2))
-             psi = k * d * cos(theta) + beta
+    Returns a real-valued amplitude excitation weight vector of length N.
 
     Parameters:
-        theta : float or np.ndarray
-            Observation angle in radians.
-        N     : int
-            Number of collinear/parallel array elements.
-        d     : float, optional
-            Inter-element spacing in meters (default = lambda / 2).
-        beta  : float, optional
-            Progressive phase shift between adjacent elements in radians.
+        N       : int    Number of elements.
+        taper   : str    'uniform'   - equal weights (default)
+                         'chebyshev' - Dolph-Chebyshev, minimizes HPBW for given SLL
+                         'binomial'  - maximally smooth, no sidelobes, wide beam
+        sll_db  : float  Target sidelobe attenuation in dB for Chebyshev taper (e.g. 30.0).
 
     Returns:
-        np.ndarray or float
-            Normalized Array Factor magnitude (0.0 to 1.0).
+        np.ndarray of shape (N,), dtype float64, normalized so max(w) = 1.0
+    """
+    if taper == 'chebyshev':
+        # scipy.signal.chebwin(N, at) returns Dolph-Chebyshev window of length N
+        # with sidelobe attenuation = at dB
+        w = chebwin(N, float(sll_db))
+    elif taper == 'binomial':
+        # Binomial weights: C(N-1, k) for k = 0..N-1 -> no sidelobes, wide beam
+        k_vals = np.arange(N)
+        w = np.array([float(scipy_comb(N - 1, k, exact=False)) for k in k_vals],
+                     dtype=float)
+    else:
+        # Uniform excitation
+        w = np.ones(N, dtype=float)
+
+    # Normalize so peak weight = 1.0
+    w_max = np.max(np.abs(w))
+    if w_max > 1e-12:
+        w = w / w_max
+    return w
+
+
+# ------------------------------------------------------------------------------
+# 3b. Array Factor: N-Element ULA with Amplitude Tapering
+# ------------------------------------------------------------------------------
+def array_factor(theta, N=4, d=None, beta=0.0, taper='uniform', sll_db=30.0):
+    """
+    Computes normalized Array Factor AF(theta) for an N-element ULA.
+    Supports uniform excitation AND amplitude-tapered excitation
+    (Dolph-Chebyshev, Binomial) for sidelobe-level (SLL) control.
+
+    Weighted AF formulation:
+        AF(theta) = sum_{n=0}^{N-1} w_n * exp(j * n * psi)
+        psi = k * d * cos(theta) + beta
+
+    For uniform taper (all w_n = 1/N), this reduces to the closed-form:
+        AF(psi) = sin(N*psi/2) / (N * sin(psi/2))
+
+    Parameters:
+        theta   : float or np.ndarray  Observation angle (radians).
+        N       : int                  Number of array elements.
+        d       : float, optional      Inter-element spacing (m). Default = lambda/2.
+        beta    : float, optional      Progressive phase shift (radians).
+        taper   : str                  'uniform' | 'chebyshev' | 'binomial'
+        sll_db  : float                Chebyshev sidelobe attenuation (dB). Default = 30.
+
+    Returns:
+        np.ndarray or float  Normalized Array Factor magnitude (0.0 to 1.0).
     """
     if d is None:
         d = LAMBDA / 2.0
 
     theta_arr = np.asarray(theta, dtype=float)
-    psi = K0 * d * np.cos(theta_arr) + beta
-    half_psi = 0.5 * psi
+    psi = K0 * d * np.cos(theta_arr) + beta   # progressive phase per element
+    weights = get_taper_weights(N, taper=taper, sll_db=sll_db)
 
-    with np.errstate(divide='ignore', invalid='ignore'):
-        den = N * np.sin(half_psi)
-        num = np.sin(0.5 * N * psi)
-        # As sin(half_psi) -> 0, AF -> 1.0
-        AF = np.where(np.abs(den) > 1e-12, num / den, 1.0)
+    # Vectorized weighted sum: AF[theta] = sum_n w[n] * exp(j*n*psi[theta])
+    n_idx = np.arange(N, dtype=float)          # shape (N,)
+    psi_arr = np.atleast_1d(psi)
+    # psi_arr shape: (M,), n shape: (N,) -> outer product -> (N, M)
+    phase_matrix = np.exp(1j * np.outer(n_idx, psi_arr))   # (N, M)
+    w_col = weights[:, np.newaxis]                          # (N, 1)
+    AF_complex = np.sum(w_col * phase_matrix, axis=0)       # (M,)
 
-    return np.abs(AF)
+    # Normalize by coherent sum of weights so peak = 1.0 (preserves angle variation for scalars)
+    w_sum = np.sum(np.abs(weights))
+    AF_mag = np.abs(AF_complex) / (w_sum if w_sum > 1e-12 else 1.0)
+
+    if np.isscalar(theta):
+        return float(AF_mag[0])
+    return AF_mag
 
 
 # ------------------------------------------------------------------------------
 # 4. Total Radiation Pattern (Pattern Multiplication Theorem)
 # ------------------------------------------------------------------------------
-def total_pattern(theta, N=4, d=None, beta=0.0):
+def total_pattern(theta, N=4, d=None, beta=0.0, taper='uniform', sll_db=30.0):
     """
     Total field pattern via Pattern Multiplication Theorem:
-    E_total(theta) = Element_Factor(theta) * Array_Factor(theta)
+    E_total(theta) = Element_Factor(theta) * Array_Factor(theta; taper)
 
     Parameters:
-        theta : float or np.ndarray
-            Observation angle in radians.
-        N     : int
-            Number of array elements.
-        d     : float, optional
-            Inter-element spacing in meters (default = lambda / 2).
-        beta  : float, optional
-            Progressive phase shift in radians.
+        theta   : float or np.ndarray  Observation angle (radians).
+        N       : int                  Number of array elements.
+        d       : float, optional      Inter-element spacing (m). Default = lambda/2.
+        beta    : float, optional      Progressive phase shift (radians).
+        taper   : str                  Amplitude taper: 'uniform'|'chebyshev'|'binomial'
+        sll_db  : float                Chebyshev SLL target (dB). Default = 30.
 
     Returns:
-        np.ndarray or float
-            Normalized total field magnitude pattern.
+        np.ndarray or float  Normalized total field magnitude pattern.
     """
     if d is None:
         d = LAMBDA / 2.0
 
     ef = element_factor(theta)
-    af = array_factor(theta, N=N, d=d, beta=beta)
+    af = array_factor(theta, N=N, d=d, beta=beta, taper=taper, sll_db=sll_db)
     return ef * af
 
 
@@ -556,6 +605,108 @@ def generate_theoretical_csv(filename="theoretical_pattern.csv", N=4, d=None, be
 
 
 # ------------------------------------------------------------------------------
+# 3D Spherical Radiation Pattern Plot (Gap 1 fix)
+# ------------------------------------------------------------------------------
+def plot_3d_spherical_pattern(N=4, d=None, beta=0.0, taper='uniform',
+                              filename="radiation_3d_spherical.png"):
+    """
+    Renders the full 3D spherical radiation pattern of the array by rotating
+    the azimuthally-symmetric ULA pattern around the array axis (z-axis).
+    Uses Matplotlib mpl_toolkits.mplot3d -- no extra dependencies required.
+
+    Parameters:
+        N        : int    Number of elements.
+        d        : float  Inter-element spacing (m). Default = lambda/2.
+        beta     : float  Progressive phase shift (radians).
+        taper    : str    Amplitude taper: 'uniform' | 'chebyshev' | 'binomial'
+        filename : str    Output PNG filename.
+    """
+    if d is None:
+        d = LAMBDA / 2.0
+
+    # Build spherical coordinate grids
+    theta_vals = np.linspace(0.0, np.pi, 181)       # elevation: 0 to 180 deg
+    phi_vals   = np.linspace(0.0, 2.0 * np.pi, 361) # azimuth:   0 to 360 deg
+    THETA, PHI = np.meshgrid(theta_vals, phi_vals)   # shape (361, 181)
+
+    # Pattern is phi-independent for a ULA along z-axis: evaluate on flat theta
+    E_flat = total_pattern(theta_vals, N=N, d=d, beta=beta, taper=taper)
+    E_max  = np.max(E_flat)
+    if E_max > 1e-12:
+        E_flat = E_flat / E_max
+    # Broadcast to full (phi, theta) surface
+    R = np.tile(E_flat, (phi_vals.size, 1))          # shape (361, 181)
+
+    # Convert spherical (R, theta, phi) -> Cartesian (X, Y, Z)
+    X = R * np.sin(THETA) * np.cos(PHI)
+    Y = R * np.sin(THETA) * np.sin(PHI)
+    Z = R * np.cos(THETA)
+
+    # Color the surface by radiation intensity (power = R^2)
+    intensity = R ** 2
+    facecolors = plt.cm.jet(intensity / np.max(intensity + 1e-12))
+
+    fig = plt.figure(figsize=(10, 8))
+    ax  = fig.add_subplot(111, projection='3d')
+    ax.plot_surface(X, Y, Z, facecolors=facecolors, linewidth=0,
+                   antialiased=True, alpha=0.85, rstride=2, cstride=2)
+
+    # Axis labels and styling
+    ax.set_xlabel('X')
+    ax.set_ylabel('Y')
+    ax.set_zlabel('Z (Array Axis)')
+    d_lam = d / LAMBDA
+    ax.set_title(
+        "3D Spherical Radiation Pattern\n"
+        "N={}, d={:.2f}*lambda, beta={:.0f} deg, Taper: {}  |  f0=2.44 GHz".format(
+            N, d_lam, float(np.degrees(beta)), taper),
+        fontsize=11, pad=12
+    )
+
+    # Add a colorbar indicating power level
+    mappable = plt.cm.ScalarMappable(cmap='jet')
+    mappable.set_array(intensity.ravel())
+    cbar = fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=12, pad=0.1)
+    cbar.set_label('Normalized Power', fontsize=9)
+
+    fig.tight_layout()
+    fig.savefig(filename, dpi=150)
+    plt.close(fig)
+    print("  [Saved] {}".format(filename))
+
+
+def _compare_tapers(N=4, d=None, beta=0.0):
+    """Save a 3-panel polar comparison of uniform, Chebyshev, binomial tapers."""
+    if d is None:
+        d = LAMBDA / 2.0
+    theta_rad = np.linspace(0.0, 2.0 * np.pi, 3600)
+    theta_eval = np.where(theta_rad <= np.pi, theta_rad, 2.0 * np.pi - theta_rad)
+    fig, axes = plt.subplots(1, 3, subplot_kw={"projection": "polar"}, figsize=(15, 5))
+    specs = [
+        ("uniform",   "royalblue",  "Uniform (No Taper)"),
+        ("chebyshev", "crimson",    "Dolph-Chebyshev (30 dB SLL)"),
+        ("binomial",  "forestgreen","Binomial (Max Smooth)"),
+    ]
+    for ax, (tp, col, lbl) in zip(axes, specs):
+        pat = total_pattern(theta_eval, N=N, d=d, beta=beta, taper=tp)
+        pat_max = np.max(pat)
+        if pat_max > 1e-12:
+            pat = pat / pat_max
+        ax.plot(theta_rad, pat, color=col, linewidth=2.0)
+        ax.fill(theta_rad, pat, color=col, alpha=0.15)
+        ax.set_theta_zero_location("N")
+        ax.set_theta_direction(-1)
+        ax.set_title(lbl, fontsize=10, pad=12)
+    fig.suptitle(
+        "Amplitude Taper Comparison  |  N={}, d={:.2f}lambda, f0=2.44 GHz".format(
+            N, d / LAMBDA),
+        fontsize=12, y=1.02)
+    fig.tight_layout()
+    fig.savefig("taper_comparison.png", dpi=150)
+    plt.close(fig)
+    print("  [Saved] taper_comparison.png")
+
+# ------------------------------------------------------------------------------
 # 12. Main Execution Routine
 # ------------------------------------------------------------------------------
 if __name__ == "__main__":
@@ -614,6 +765,14 @@ if __name__ == "__main__":
     plot_polar_pattern(N=N_elements, d=d_spacing, beta=beta_phase, filename="radiation_pattern_polar.png")
     plot_beam_steering(N=N_elements, d=d_spacing, filename="beam_steering.png")
     plot_vswr_s11_sweep(filename="vswr_s11_sweep.png")
+
+    plot_3d_spherical_pattern(N=N_elements, d=d_spacing, beta=beta_phase,
+
+                              taper='uniform', filename="radiation_3d_spherical.png")
+
+    # Also generate a comparison of all three tapers on one polar plot
+
+    _compare_tapers(N_elements, d_spacing, beta_phase)
 
     print("\nAll tasks completed successfully. Output files generated.")
     print("=" * 65)
