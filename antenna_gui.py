@@ -40,7 +40,9 @@ try:
         compute_directivity,
         compute_hpbw,
         generate_theoretical_csv,
-        get_taper_weights
+        get_taper_weights,
+        array_factor_3d,
+        array_pattern_3d
     )
 except ImportError:
     C0 = 299792458.0
@@ -82,6 +84,26 @@ except ImportError:
             w.writerow(["angle_deg", "gain_dBi"])
             for a in angles:
                 w.writerow([a, "{:.2f}".format(-10.0)])
+
+    def array_pattern_3d(theta, phi, N=4, d=None, beta=0.0, taper='uniform',
+                         sll_db=30.0, array_axis='x', element='dipole'):
+        if d is None:
+            d = LAMBDA / 2.0
+        th = np.asarray(theta, dtype=float)
+        ph = np.asarray(phi, dtype=float)
+        if array_axis == 'x':
+            psi = K0 * d * np.sin(th) * np.cos(ph) + beta
+        else:
+            psi = K0 * d * np.cos(th) + beta
+        ef = element_factor(th) if element == 'dipole' else 1.0
+        n_idx = np.arange(N, dtype=float)
+        psi_arr = np.atleast_1d(psi)
+        n_exp = n_idx.reshape((N,) + (1,) * psi_arr.ndim)
+        psi_exp = np.expand_dims(psi_arr, axis=0)
+        AF = np.abs(np.sum(np.exp(1j * n_exp * psi_exp), axis=0)) / float(N)
+        pat = ef * (AF if np.isscalar(psi) else AF.reshape(psi.shape))
+        pk = np.max(pat)
+        return pat / (pk if pk > 1e-12 else 1.0)
 
 
 # ------------------------------------------------------------------------------
@@ -162,6 +184,8 @@ class AntennaDashboard:
         self.null_list = []
         self.taper = 'uniform'          # 'uniform' | 'chebyshev' | 'binomial'
         self.chebyshev_sll = 30.0       # Dolph-Chebyshev SLL target (dB)
+        self.view_mode = '2D Polar Cut' # '2D Polar Cut' | '3D Spherical'
+        self.current_proj = 'polar'     # 'polar' | '3d' 
 
         # CSV file paths
         self.theory_csv_path = "theoretical_pattern.csv"
@@ -183,7 +207,17 @@ class AntennaDashboard:
             fontsize=13, fontweight='bold', y=0.98
         )
 
-        # Axes: Main Polar | Overlay Polar | Control Panel (sliders right)
+        # Top Mode Controls for Main Panel: 2D Polar vs 3D Spherical
+        self.fig.text(0.05, 0.945, "Main Panel View:", fontsize=8.5, fontweight='bold')
+        ax_mode = self.fig.add_axes([0.15, 0.935, 0.17, 0.035], facecolor='lightcyan')
+        self.radio_mode = RadioButtons(ax_mode, ('2D Polar Cut', '3D Spherical'), active=0)
+        for lbl in self.radio_mode.labels:
+            lbl.set_fontsize(8)
+
+        ax_pop3d = self.fig.add_axes([0.33, 0.935, 0.10, 0.035])
+        self.btn_pop3d = Button(ax_pop3d, 'Pop 3D Window', color='powderblue', hovercolor='deepskyblue')
+
+        # Axes: Main Panel | Overlay Polar | Control Panel (sliders right)
         self.ax_main = self.fig.add_axes([0.05, 0.12, 0.38, 0.78], projection='polar')
         self.ax_overlay = self.fig.add_axes([0.46, 0.12, 0.30, 0.78], projection='polar')
 
@@ -277,6 +311,8 @@ class AntennaDashboard:
         self.btn_overlay.on_clicked(self.on_plot_overlay)
         self.btn_recalc.on_clicked(self.on_update_theory_csv)
         self.radio_taper.on_clicked(self.on_taper_change)
+        self.radio_mode.on_clicked(self.on_view_mode_change)
+        self.btn_pop3d.on_clicked(self.on_pop_3d)
 
         # Initial draw
         self.update_main_plot()
@@ -323,41 +359,58 @@ class AntennaDashboard:
         self.update_main_plot()
 
     # --------------------------------------------------------------------------
-    # Main Plot Update
+    # View Mode & Pop 3D Window Callbacks
     # --------------------------------------------------------------------------
-    def update_main_plot(self):
-        self.ax_main.cla()
-        self.ax_main.set_theta_zero_location('N')
-        self.ax_main.set_theta_direction(-1)
+    def on_view_mode_change(self, label):
+        self.view_mode = label
+        self.update_main_plot()
+
+    def on_pop_3d(self, event):
+        """Opens dedicated interactive 3D window using array_pattern_3d(theta, phi)."""
+        fig3d = plt.figure(figsize=(8, 7))
+        fig3d.canvas.manager.set_window_title("3D Spherical Pattern - Linear Mode")
+        ax3d = fig3d.add_subplot(111, projection='3d')
 
         d_m = self.d_ratio * LAMBDA
         beta_rad = np.radians(self.beta_deg)
 
-        theta = np.linspace(0.0, 2.0 * np.pi, 3600)
-        theta_eval = np.where(theta <= np.pi, theta, 2.0 * np.pi - theta)
+        th_vals = np.linspace(0.0, np.pi, 91)
+        ph_vals = np.linspace(0.0, 2.0 * np.pi, 181)
+        THETA, PHI = np.meshgrid(th_vals, ph_vals)
 
-        pat = total_pattern(theta_eval, N=self.N, d=d_m, beta=beta_rad, taper=self.taper)
+        # Evaluate using engine's array_pattern_3d(theta, phi)
+        R = array_pattern_3d(THETA, PHI, N=self.N, d=d_m, beta=beta_rad,
+                             taper=self.taper, sll_db=self.chebyshev_sll, array_axis='x')
 
-        # Apply Schelkunoff nulls
-        if self.null_list:
-            null_w = compute_schelkunoff_factor(theta_eval, self.null_list, d_m, beta_rad)
-            pat = pat * null_w
+        X = R * np.sin(THETA) * np.cos(PHI)
+        Y = R * np.sin(THETA) * np.sin(PHI)
+        Z = R * np.cos(THETA)
 
-        max_p = np.max(pat)
-        if max_p > 1e-12:
-            pat = pat / max_p
+        intensity = R ** 2
+        facecolors = plt.cm.jet(intensity / np.max(intensity + 1e-12))
+        ax3d.plot_surface(X, Y, Z, facecolors=facecolors, linewidth=0,
+                          antialiased=True, alpha=0.85, rstride=2, cstride=2)
 
-        self.ax_main.plot(theta, pat, color='royalblue', linewidth=2.0, label='Array Pattern |E|')
-        self.ax_main.fill(theta, pat, color='royalblue', alpha=0.15)
+        ax3d.set_xlabel('X (Boom Axis)')
+        ax3d.set_ylabel('Y')
+        ax3d.set_zlabel('Z (Dipole Axis)')
+        ax3d.set_title(
+            "Interactive 3D Radiation Pattern [array_pattern_3d]\n"
+            "N={}, d={:.2f}*lambda, beta={:.0f} deg, Taper: {} | f0=2.44 GHz".format(
+                self.N, self.d_ratio, self.beta_deg, self.taper),
+            fontsize=10, pad=12
+        )
+        fig3d.tight_layout()
+        fig3d.show()
 
-        # Mark null directions
-        for n_ang in self.null_list:
-            rad = np.radians(n_ang)
-            self.ax_main.plot([rad, rad], [0.0, 1.0], color='crimson',
-                              linestyle='--', linewidth=1.5)
-            self.ax_main.scatter([rad], [1.0], color='crimson', s=35, zorder=5)
+    # --------------------------------------------------------------------------
+    # Main Plot Update (Supports 2D Polar Cut and 3D Spherical Linear Mode)
+    # --------------------------------------------------------------------------
+    def update_main_plot(self):
+        d_m = self.d_ratio * LAMBDA
+        beta_rad = np.radians(self.beta_deg)
 
-        # Metrics
+        # Compute Metrics
         D0_dBi, _ = compute_directivity(N=self.N, d=d_m, beta=beta_rad)
         hpbw, th_max = compute_hpbw(N=self.N, d=d_m, beta=beta_rad)
         hpbw_str = "{:.1f} deg".format(hpbw) if hpbw is not None else "N/A"
@@ -370,16 +423,103 @@ class AntennaDashboard:
             "D0:        {:.2f} dBi\n"
             "HPBW:      {}\n"
             "Main Beam: {:.1f} deg\n"
-            "Nulls:     {}".format(F0 / 1e9, D0_dBi, hpbw_str, th_max, null_str)
+            "Nulls:     {}\n"
+            "View:      {}".format(F0 / 1e9, D0_dBi, hpbw_str, th_max, null_str, self.view_mode)
         )
 
-        self.ax_main.set_title(
-            "Interactive Pattern\nN={}, d={:.2f}*lambda, beta={:.0f} deg".format(
-                self.N, self.d_ratio, self.beta_deg),
-            fontsize=10, pad=12
-        )
-        self.ax_main.set_rlabel_position(45)
-        self.ax_main.legend(loc='lower right', fontsize=8)
+        if self.view_mode == '3D Spherical':
+            # ------------------------------------------------------------------
+            # LINEAR-MODE 3D PANEL: Uses engine's array_pattern_3d(theta, phi)
+            # Replaces revolving 2D cut with true 3D spatial field evaluation
+            # ------------------------------------------------------------------
+            if self.current_proj != '3d':
+                self.ax_main.remove()
+                self.ax_main = self.fig.add_axes([0.05, 0.12, 0.38, 0.78], projection='3d')
+                self.current_proj = '3d'
+            else:
+                self.ax_main.cla()
+
+            # Fast interactive mesh
+            th_mesh = np.linspace(0.0, np.pi, 61)
+            ph_mesh = np.linspace(0.0, 2.0 * np.pi, 91)
+            THETA, PHI = np.meshgrid(th_mesh, ph_mesh)
+
+            # Evaluate engine's array_pattern_3d(theta, phi)
+            R = array_pattern_3d(THETA, PHI, N=self.N, d=d_m, beta=beta_rad,
+                                 taper=self.taper, sll_db=self.chebyshev_sll, array_axis='x')
+
+            # Apply null suppression factor across spherical coordinates if placed
+            if self.null_list:
+                null_w = compute_schelkunoff_factor(THETA, self.null_list, d_m, beta_rad)
+                R = R * null_w
+                pk = np.max(R)
+                if pk > 1e-12:
+                    R = R / pk
+
+            X = R * np.sin(THETA) * np.cos(PHI)
+            Y = R * np.sin(THETA) * np.sin(PHI)
+            Z = R * np.cos(THETA)
+
+            intensity = R ** 2
+            facecolors = plt.cm.jet(intensity / np.max(intensity + 1e-12))
+            self.ax_main.plot_surface(X, Y, Z, facecolors=facecolors, linewidth=0,
+                                      antialiased=True, alpha=0.85, rstride=2, cstride=2)
+
+            self.ax_main.set_xlabel('X (Boom)')
+            self.ax_main.set_ylabel('Y')
+            self.ax_main.set_zlabel('Z (Dipole)')
+            self.ax_main.set_title(
+                "3D Radiation Pattern (Linear Mode)\n"
+                "array_pattern_3d(theta, phi) | N={}, d={:.2f}*lambda, beta={:.0f} deg".format(
+                    self.N, self.d_ratio, self.beta_deg),
+                fontsize=10, pad=12
+            )
+        else:
+            # ------------------------------------------------------------------
+            # 2D POLAR CUT MODE
+            # ------------------------------------------------------------------
+            if self.current_proj != 'polar':
+                self.ax_main.remove()
+                self.ax_main = self.fig.add_axes([0.05, 0.12, 0.38, 0.78], projection='polar')
+                self.current_proj = 'polar'
+            else:
+                self.ax_main.cla()
+
+            self.ax_main.set_theta_zero_location('N')
+            self.ax_main.set_theta_direction(-1)
+
+            theta = np.linspace(0.0, 2.0 * np.pi, 3600)
+            theta_eval = np.where(theta <= np.pi, theta, 2.0 * np.pi - theta)
+
+            pat = total_pattern(theta_eval, N=self.N, d=d_m, beta=beta_rad, taper=self.taper)
+
+            # Apply Schelkunoff nulls
+            if self.null_list:
+                null_w = compute_schelkunoff_factor(theta_eval, self.null_list, d_m, beta_rad)
+                pat = pat * null_w
+
+            max_p = np.max(pat)
+            if max_p > 1e-12:
+                pat = pat / max_p
+
+            self.ax_main.plot(theta, pat, color='royalblue', linewidth=2.0, label='Array Pattern |E|')
+            self.ax_main.fill(theta, pat, color='royalblue', alpha=0.15)
+
+            # Mark null directions
+            for n_ang in self.null_list:
+                rad = np.radians(n_ang)
+                self.ax_main.plot([rad, rad], [0.0, 1.0], color='crimson',
+                                  linestyle='--', linewidth=1.5)
+                self.ax_main.scatter([rad], [1.0], color='crimson', s=35, zorder=5)
+
+            self.ax_main.set_title(
+                "2D Polar Pattern (Elevation Cut)\nN={}, d={:.2f}*lambda, beta={:.0f} deg".format(
+                    self.N, self.d_ratio, self.beta_deg),
+                fontsize=10, pad=12
+            )
+            self.ax_main.set_rlabel_position(45)
+            self.ax_main.legend(loc='lower right', fontsize=8)
+
         self.fig.canvas.draw_idle()
 
     # --------------------------------------------------------------------------

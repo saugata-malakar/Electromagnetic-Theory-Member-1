@@ -173,6 +173,144 @@ def total_pattern(theta, N=4, d=None, beta=0.0, taper='uniform', sll_db=30.0):
 
 
 # ------------------------------------------------------------------------------
+# 4b. 3D Array Factor: AF_3D(theta, phi)
+# ------------------------------------------------------------------------------
+def array_factor_3d(theta, phi, N=4, d=None, beta=0.0, taper='uniform',
+                    sll_db=30.0, array_axis='x'):
+    """
+    Computes normalized 3D Array Factor AF(theta, phi) for an N-element linear array.
+    Evaluates spatial phase across 3D spherical coordinates (theta, phi):
+        - array_axis == 'x': psi(theta, phi) = k0 * d * sin(theta) * cos(phi) + beta
+          (horizontal boom with parallel elements, true 3D beamforming)
+        - array_axis == 'y': psi(theta, phi) = k0 * d * sin(theta) * sin(phi) + beta
+        - array_axis == 'z': psi(theta, phi) = k0 * d * cos(theta) + beta
+          (collinear line array along z-axis)
+
+    Parameters:
+        theta      : float or np.ndarray
+            Elevation / polar angle in radians (0 to pi).
+        phi        : float or np.ndarray
+            Azimuth angle in radians (0 to 2*pi).
+        N          : int
+            Number of array elements.
+        d          : float, optional
+            Inter-element spacing in meters (default = lambda / 2).
+        beta       : float, optional
+            Progressive phase shift in radians.
+        taper      : str
+            'uniform' | 'chebyshev' | 'binomial'
+        sll_db     : float
+            Chebyshev sidelobe attenuation in dB (default = 30.0).
+        array_axis : str
+            Linear array placement axis: 'x' (default), 'y', or 'z'.
+
+    Returns:
+        np.ndarray or float
+            Normalized 3D Array Factor magnitude (0.0 to 1.0).
+    """
+    if d is None:
+        d = LAMBDA / 2.0
+
+    theta_arr = np.asarray(theta, dtype=float)
+    phi_arr   = np.asarray(phi, dtype=float)
+
+    if array_axis == 'x':
+        psi = K0 * d * np.sin(theta_arr) * np.cos(phi_arr) + beta
+    elif array_axis == 'y':
+        psi = K0 * d * np.sin(theta_arr) * np.sin(phi_arr) + beta
+    else:  # 'z'
+        psi = K0 * d * np.cos(theta_arr) + beta
+
+    weights = get_taper_weights(N, taper=taper, sll_db=sll_db)
+    w_sum   = np.sum(np.abs(weights))
+
+    n_idx   = np.arange(N, dtype=float)
+    psi_arr = np.atleast_1d(psi)
+    n_exp   = n_idx.reshape((N,) + (1,) * psi_arr.ndim)
+    psi_exp = np.expand_dims(psi_arr, axis=0)
+    phase_mat = np.exp(1j * n_exp * psi_exp)
+
+    w_exp = weights.reshape((N,) + (1,) * psi_arr.ndim)
+    AF_complex = np.sum(w_exp * phase_mat, axis=0)
+
+    AF_mag = np.abs(AF_complex) / (w_sum if w_sum > 1e-12 else 1.0)
+
+    if np.isscalar(theta) and np.isscalar(phi):
+        return float(AF_mag.ravel()[0])
+    if psi.shape != AF_mag.shape:
+        AF_mag = AF_mag.reshape(psi.shape)
+    return AF_mag
+
+
+# ------------------------------------------------------------------------------
+# 4c. 3D Total Radiation Pattern: E_total(theta, phi)
+# ------------------------------------------------------------------------------
+def array_pattern_3d(theta, phi, N=4, d=None, beta=0.0, taper='uniform',
+                     sll_db=30.0, array_axis='x', element='dipole'):
+    """
+    Evaluates the true 3D radiation pattern E_total(theta, phi) via 3D Pattern Multiplication.
+    E_total(theta, phi) = Element_Factor(theta, phi) * AF_3D(theta, phi)
+    Replaces artificial 2D-cut revolving with exact spherical field computation.
+
+    Parameters:
+        theta      : float or np.ndarray
+            Polar / elevation angle in radians (0 to pi).
+        phi        : float or np.ndarray
+            Azimuth angle in radians (0 to 2*pi).
+        N          : int
+            Number of array elements.
+        d          : float, optional
+            Inter-element spacing in meters (default = lambda / 2).
+        beta       : float, optional
+            Progressive phase shift in radians.
+        taper      : str
+            'uniform' | 'chebyshev' | 'binomial'
+        sll_db     : float
+            Chebyshev SLL target in dB (default = 30.0).
+        array_axis : str
+            Array placement axis: 'x' (default, e.g. Yagi boom), 'y', or 'z'.
+        element    : str
+            'dipole' (half-wave z-oriented dipole) or 'isotropic'.
+
+    Returns:
+        np.ndarray or float
+            Normalized 3D field radiation magnitude (0.0 to 1.0).
+    """
+    if d is None:
+        d = LAMBDA / 2.0
+
+    theta_arr = np.asarray(theta, dtype=float)
+
+    if element == 'dipole':
+        # z-oriented half-wave dipole: F(theta) = |cos(pi/2 * cos(theta))| / sin(theta)
+        s = np.sin(theta_arr)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ef = np.where(
+                np.abs(s) > 1e-12,
+                np.cos(0.5 * np.pi * np.cos(theta_arr)) / s,
+                0.0
+            )
+        ef = np.abs(ef)
+    else:
+        ef = 1.0
+
+    af_3d = array_factor_3d(theta, phi, N=N, d=d, beta=beta,
+                            taper=taper, sll_db=sll_db, array_axis=array_axis)
+    pat = ef * af_3d
+
+    # Normalize peak to 1.0
+    peak = np.max(pat)
+    if peak > 1e-12:
+        pat_norm = pat / peak
+    else:
+        pat_norm = pat
+
+    if np.isscalar(theta) and np.isscalar(phi):
+        return float(np.asarray(pat_norm).ravel()[0])
+    return pat_norm
+
+
+# ------------------------------------------------------------------------------
 # 5. Directivity Computation via Numerical Quadrature
 # ------------------------------------------------------------------------------
 def compute_directivity(N=4, d=None, beta=0.0):
@@ -608,18 +746,21 @@ def generate_theoretical_csv(filename="theoretical_pattern.csv", N=4, d=None, be
 # 3D Spherical Radiation Pattern Plot (Gap 1 fix)
 # ------------------------------------------------------------------------------
 def plot_3d_spherical_pattern(N=4, d=None, beta=0.0, taper='uniform',
+                              sll_db=30.0, array_axis='x',
                               filename="radiation_3d_spherical.png"):
     """
-    Renders the full 3D spherical radiation pattern of the array by rotating
-    the azimuthally-symmetric ULA pattern around the array axis (z-axis).
-    Uses Matplotlib mpl_toolkits.mplot3d -- no extra dependencies required.
+    Renders the true 3D spherical radiation pattern of the array in linear mode.
+    Uses the engine's array_pattern_3d(THETA, PHI) to evaluate exact 3D field
+    magnitudes across spherical coordinates instead of revolving a 2D cut.
 
     Parameters:
-        N        : int    Number of elements.
-        d        : float  Inter-element spacing (m). Default = lambda/2.
-        beta     : float  Progressive phase shift (radians).
-        taper    : str    Amplitude taper: 'uniform' | 'chebyshev' | 'binomial'
-        filename : str    Output PNG filename.
+        N          : int    Number of elements.
+        d          : float  Inter-element spacing (m). Default = lambda/2.
+        beta       : float  Progressive phase shift (radians).
+        taper      : str    Amplitude taper: 'uniform' | 'chebyshev' | 'binomial'
+        sll_db     : float  Chebyshev SLL in dB (default = 30.0).
+        array_axis : str    Axis of array boom: 'x' (default, broadside/endfire), 'y', or 'z'.
+        filename   : str    Output PNG filename.
     """
     if d is None:
         d = LAMBDA / 2.0
@@ -629,13 +770,10 @@ def plot_3d_spherical_pattern(N=4, d=None, beta=0.0, taper='uniform',
     phi_vals   = np.linspace(0.0, 2.0 * np.pi, 361) # azimuth:   0 to 360 deg
     THETA, PHI = np.meshgrid(theta_vals, phi_vals)   # shape (361, 181)
 
-    # Pattern is phi-independent for a ULA along z-axis: evaluate on flat theta
-    E_flat = total_pattern(theta_vals, N=N, d=d, beta=beta, taper=taper)
-    E_max  = np.max(E_flat)
-    if E_max > 1e-12:
-        E_flat = E_flat / E_max
-    # Broadcast to full (phi, theta) surface
-    R = np.tile(E_flat, (phi_vals.size, 1))          # shape (361, 181)
+    # Rigorous 3D spatial field evaluation via engine's array_pattern_3d
+    # (Replaces artificial 2D-cut revolving with true spatial field computation)
+    R = array_pattern_3d(THETA, PHI, N=N, d=d, beta=beta,
+                         taper=taper, sll_db=sll_db, array_axis=array_axis)
 
     # Convert spherical (R, theta, phi) -> Cartesian (X, Y, Z)
     X = R * np.sin(THETA) * np.cos(PHI)
@@ -652,13 +790,13 @@ def plot_3d_spherical_pattern(N=4, d=None, beta=0.0, taper='uniform',
                    antialiased=True, alpha=0.85, rstride=2, cstride=2)
 
     # Axis labels and styling
-    ax.set_xlabel('X')
+    ax.set_xlabel('X (Boom Axis)' if array_axis == 'x' else 'X')
     ax.set_ylabel('Y')
-    ax.set_zlabel('Z (Array Axis)')
+    ax.set_zlabel('Z (Dipole Axis)' if array_axis == 'x' else 'Z')
     d_lam = d / LAMBDA
     ax.set_title(
-        "3D Spherical Radiation Pattern\n"
-        "N={}, d={:.2f}*lambda, beta={:.0f} deg, Taper: {}  |  f0=2.44 GHz".format(
+        "3D Spherical Radiation Pattern (Linear Mode)\n"
+        "array_pattern_3d(theta, phi) | N={}, d={:.2f}*lambda, beta={:.0f} deg, Taper: {} | f0=2.44 GHz".format(
             N, d_lam, float(np.degrees(beta)), taper),
         fontsize=11, pad=12
     )
