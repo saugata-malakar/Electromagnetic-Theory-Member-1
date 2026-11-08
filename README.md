@@ -264,18 +264,39 @@ python antenna_gui.py
 
 ---
 
-## 🎯 Deliverables & Presentation Mapping (Slides 1–6)
+## 🎯 Complete 15-Slide Presentation Deck Mapping
 
-In accordance with the project specification rubrics, Member 1 / Project Lead directly owns the first 6 presentation slides:
+The complete capstone defense presentation report has been compiled into a publication-grade, 15-page presentation PDF: [**`EC3104_15_Slide_Capstone_Report.pdf`**](EC3104_15_Slide_Capstone_Report.pdf). 
 
-| Slide # | Slide Title | Covered Content & Deliverables |
-|---|---|---|
-| **Slide 1** | **Title Slide** | Project Title, 2.4 GHz Phased Array, Team Members, EC-3104 EMT |
-| **Slide 2** | **Project Abstract** | 300-word executive summary, objectives, hybrid software-hardware scope |
-| **Slide 3** | **Working Principle** | Maxwell's equations, thin-wire radiation, array factor, beamforming |
-| **Slide 4** | **Mathematical Formulation** | Vector potential $\mathbf{A}$, Induced EMF $[\mathbf{Z}]$, $D_0$, HPBW, Schelkunoff |
-| **Slide 5** | **Software Architecture** | Engine design, NumPy vectorization, universal CSV interface standard |
-| **Slide 6** | **Beamforming & Null Results** | Interactive GUI demonstration, beam steering sweeps, null suppression |
+Each page represents exactly one presentation slide adhering strictly to the course PRD task split:
+
+| Slide # | Slide Title | Owner / Role | Covered Content & Deliverables |
+|:---:|---|---|---|
+| **01** | **Title Slide & Team Matrix** | Project Lead & Team | Project title, metadata, 5-member task ownership & deliverables matrix |
+| **02** | **Project Abstract & Motivation** | Project Lead | Executive summary, 2.4 GHz ISM congestion, ~85% software / ~15% hardware scope |
+| **03** | **Electrodynamic Working Principles** | Project Lead | Maxwell's equations, parasitic near-field induction, traveling-wave phase matching |
+| **04** | **Mathematical Physics Formulation** | Project Lead | Vector potential $\mathbf{A}$, Induced EMF $[Z]$ matrix, 3D Array Factor, Directivity $D_0$ |
+| **05** | **Software Architecture & Contracts**| Member 1 | Decoupled workflow, universal 36-row CSV standard, `optimized_dimensions.json` |
+| **06** | **Beamforming & Null-Steering** | Member 1 | Interactive GUI dashboard, Schelkunoff polynomial nulls, true 3D spatial field |
+| **07** | **Coupled Circuit Model & Balun** | Member 2 | Multi-port network $[V]=[Z][I]$, RLC resonant equivalents, Pawsey $\lambda/4$ coaxial balun |
+| **08** | **4nec2 Full-Wave Simulation** | Member 2 | Method of Moments discretization, segment rules, dimension optimization table |
+| **09** | **Simulated S-Parameters & VSWR** | Member 2 | $S_{11}$ return loss sweep ($2.0-3.0\text{ GHz}$), VSWR bandwidth, Smith Chart crossing |
+| **10** | **Bill of Materials & Components** | Member 3 | 14 AWG solid copper wire, gold SMA edge connector, RG-316 balun, acrylic boom |
+| **11** | **Mechanical Fabrication Guide** | Member 3 | Wire cutting blueprints ($\pm 0.2\text{ mm}$), boom pilot drilling, balun soldering steps |
+| **12** | **Physical Prototype Showcase** | Member 3 | Assembled array specs ($67.6 \times 61.4\text{ mm}$, $45.2\text{ g}$), 360° protractor turntable rig |
+| **13** | **Telemetry & Field Setup** | Member 4 | ESP32 TX beacon (+20 dBm Ch. 7), Fraunhofer far-field ($R = 1.5\text{ m} > 2D^2/\lambda$), RSSI logging |
+| **14** | **Multi-Source Pattern Overlay** | Member 4 / All | Cross-domain polar overlay (Theory vs. Sim vs. Real), HPBW, 12.4 dB F/B ratio |
+| **15** | **Error Analysis & Conclusion** | All Members | Dielectric boom loading, tolerances, multipath analysis, accomplishments & future work |
+
+---
+
+### PDF Report Compilation
+The PDF report is generated programmatically in landscape orientation via:
+```bash
+python build_15_slide_pdf.py
+```
+*Guaranteed output: Exactly 15 slides across 15 landscape letter pages.*
+
 
 ---
 
