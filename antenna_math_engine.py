@@ -782,7 +782,8 @@ def plot_3d_spherical_pattern(N=4, d=None, beta=0.0, taper='uniform',
 
     # Color the surface by radiation intensity (power = R^2)
     intensity = R ** 2
-    facecolors = plt.cm.jet(intensity / np.max(intensity + 1e-12))
+    norm_intensity = intensity / np.max(intensity + 1e-12)
+    facecolors = plt.cm.plasma(norm_intensity)
 
     fig = plt.figure(figsize=(10, 8))
     ax  = fig.add_subplot(111, projection='3d')
@@ -802,7 +803,7 @@ def plot_3d_spherical_pattern(N=4, d=None, beta=0.0, taper='uniform',
     )
 
     # Add a colorbar indicating power level
-    mappable = plt.cm.ScalarMappable(cmap='jet')
+    mappable = plt.cm.ScalarMappable(cmap='plasma')
     mappable.set_array(intensity.ravel())
     cbar = fig.colorbar(mappable, ax=ax, shrink=0.5, aspect=12, pad=0.1)
     cbar.set_label('Normalized Power', fontsize=9)

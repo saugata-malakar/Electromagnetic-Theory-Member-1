@@ -1,8 +1,10 @@
 # 📡 2.4 GHz Phased Array Antenna System & Electromagnetic Field Solver
 ### Course: EC-3104 Electromagnetic Theory | Final Capstone Engineering Project
-> **Role: Member 1 / Project Lead — "The Math Brain & GUI Builder"**  
-> **Frequency Band: 2.44 GHz ISM ($\lambda = 12.287\text{ cm}$)**  
-> **Architecture: Software-First CEM Engine (85%) & Low-Cost Empirical Prototype (15%)**
+> **Lead Author & Presenter:** **Saugata Malakar** (Project Lead & Member 1 — "The Math Brain & GUI Builder")  
+> **Department:** Department of Electronics & Communication Engineering  
+> **Operating Band:** 2.44 GHz ISM ($\lambda = 12.287\text{ cm}$) | 50 $\Omega$ Matched Feed  
+> **Architecture:** Software-First CEM Engine (85%) & Low-Cost Empirical Prototype (15%)  
+> **Deliverable Presentation:** [**`EC3104_15_Slide_Capstone_Report.pdf`**](EC3104_15_Slide_Capstone_Report.pdf) (15-Slide Master Deck)
 
 ---
 
@@ -307,6 +309,6 @@ python build_15_slide_pdf.py
 4. S. A. Schelkunoff, "A Mathematical Theory of Linear Arrays," *Bell System Technical Journal*, vol. 22, no. 1, pp. 80–107, 1943.
 
 ---
-**Author / Contributor:** Member 1 (Project Lead & GUI Builder)  
+**Lead Author & Presenter:** **Saugata Malakar** (Project Lead & Member 1)  
 **Academic Course:** EC-3104 Electromagnetic Theory  
 **Repository:** [Electromagnetic-Theory-Member-1](https://github.com/saugata-malakar/Electromagnetic-Theory-Member-1)
