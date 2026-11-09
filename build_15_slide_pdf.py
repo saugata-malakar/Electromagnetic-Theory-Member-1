@@ -280,11 +280,21 @@ def get_styles():
     styles.add(ParagraphStyle(
         'CodeP',
         parent=styles['Normal'],
-        fontName='Courier-Bold',
+        fontName='Helvetica-Bold',
         fontSize=7.2,
-        leading=9.2,
+        leading=9.4,
         textColor=NAVY_HEADER,
-        spaceAfter=2.8
+        spaceAfter=2.6
+    ))
+
+    styles.add(ParagraphStyle(
+        'TerminalCodeP',
+        parent=styles['Normal'],
+        fontName='Courier-Bold',
+        fontSize=6.8,
+        leading=8.6,
+        textColor=NAVY_HEADER,
+        spaceAfter=2.5
     ))
 
     styles.add(ParagraphStyle(
@@ -561,21 +571,21 @@ def generate_pdf():
     s3_r1_l = [
         Paragraph("Time-Harmonic Maxwell Equations & Lorenz Decoupling", styles['CardHead']),
         Paragraph("Antenna radiation originates from time-varying electric charge and current distributions governed by the fundamental time-harmonic Maxwell curl equations in free space:", styles['BodyP']),
-        Paragraph("<b>&nabla; &times; E = -j&omega;&mu;<sub>0</sub> H &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nabla; &times; H = j&omega;&epsilon;<sub>0</sub> E + J</b>", styles['CodeP']),
+        Paragraph("<b>&nabla; &times; E = -j&omega;&mu;<sub>0</sub> H &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nabla; &times; H = j&omega;&epsilon;<sub>0</sub> E + J</b>", styles['CodeP']),
         Paragraph("Applying the Lorenz gauge condition <b>&nabla; &middot; A = -j&omega;&mu;<sub>0</sub>&epsilon;<sub>0</sub> &Phi;</b> decouples electromagnetic potentials, yielding the inhomogeneous Helmholtz wave equation for magnetic vector potential A:", styles['BodyP']),
-        Paragraph("<b>&nabla;<sup>2</sup> A + k<sub>0</sub><sup>2</sup> A = -&mu;<sub>0</sub> J, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; k<sub>0</sub> = 2&pi; / &lambda;<sub>0</sub> = &omega;&radic;(&mu;<sub>0</sub>&epsilon;<sub>0</sub>) &approx; 51.137 rad/m</b>", styles['CodeP']),
-        Paragraph("The scalar potential &Phi; is eliminated, allowing fields to be calculated directly from current distributions J. Green's function G(r,r') = e<sup>-jk<sub>0</sub>|r-r'|</sup>/(4&pi;|r-r'|) launches spherical waves into free space.", styles['BodyP']),
+        Paragraph("<b>&nabla;<sup>2</sup>A + k<sub>0</sub><sup>2</sup>A = -&mu;<sub>0</sub> J, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; k<sub>0</sub> = 2&pi; / &lambda;<sub>0</sub> = &omega;&radic;(&mu;<sub>0</sub>&epsilon;<sub>0</sub>) &approx; 51.137 rad/m</b>", styles['CodeP']),
+        Paragraph("The scalar potential &Phi; is eliminated, allowing fields to be calculated directly from current distributions J. Green's function G(r,r') = exp(-j k<sub>0</sub>|r-r'|) / (4&pi;|r-r'|) launches spherical waves into free space.", styles['BodyP']),
         Paragraph("<b>Charge Continuity:</b> &nabla; &middot; J = -j&omega;&rho; confirms that electric charge accumulates at outer wire tips.", styles['BulletP'])
     ]
 
     s3_r1_r = [
         Paragraph("Lorenz Potential & Far-Field Retarded Integration", styles['CardHeadBlue']),
         Paragraph("The formal integral solution to Helmholtz's equation in free space is the retarded magnetic vector potential at observation coordinate r:", styles['BodyP']),
-        Paragraph("<b>A(r) = (&mu;<sub>0</sub> / 4&pi;) &int;&int;&int; [ J(r') e<sup>-j k<sub>0</sub> |r - r'|</sup> / |r - r'| ] dV'</b>", styles['CodeP']),
-        Paragraph("In the Fraunhofer far-field zone (r &gt;&gt; r'), distance is approximated as |r - r'| &approx; r - r' &middot; r&#770; in the phase factor and |r - r'| &approx; r in the amplitude factor, yielding spherical TEM radiation fields with wave impedance &eta;<sub>0</sub> &approx; 376.73 &Omega;:", styles['BodyP']),
-        Paragraph("<b>E<sub>far</sub> = -j&omega; A<sub>&theta;</sub> &theta;&#770; - j&omega; A<sub>&phi;</sub> &phi;&#770;, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; H<sub>far</sub> = (1 / &eta;<sub>0</sub>) r&#770; &times; E<sub>far</sub></b>", styles['CodeP']),
+        Paragraph("<b>A(r) = (&mu;<sub>0</sub> / 4&pi;) &int;&int;&int; [ J(r') exp(-j k<sub>0</sub>|r - r'|) / |r - r'| ] dV'</b>", styles['CodeP']),
+        Paragraph("In the Fraunhofer far-field zone (r &gt;&gt; r'), distance is approximated as |r - r'| &approx; r - r' &middot; <b>a</b><sub>r</sub> in the phase factor and |r - r'| &approx; r in amplitude, yielding spherical TEM radiation fields with wave impedance &eta;<sub>0</sub> &approx; 376.73 &Omega;:", styles['BodyP']),
+        Paragraph("<b>E<sub>far</sub> = -j&omega; A<sub>&theta;</sub> <b>a</b><sub>&theta;</sub> - j&omega; A<sub>&phi;</sub> <b>a</b><sub>&phi;</sub>, &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; H<sub>far</sub> = (1 / &eta;<sub>0</sub>) <b>a</b><sub>r</sub> &times; E<sub>far</sub></b>", styles['CodeP']),
         Paragraph("At far distances, radial field components E<sub>r</sub> decay as 1/r<sup>2</sup>, leaving pure transverse electrodynamic radiation carrying active Poynting flux.", styles['BodyP']),
-        Paragraph("<b>Poynting Flux:</b> W<sub>av</sub> = &frac12; Re(E &times; H<sup>*</sup>) = r&#770; |E<sub>&theta;</sub>|<sup>2</sup> / (2&eta;<sub>0</sub>) W/m<sup>2</sup>.", styles['BulletP'])
+        Paragraph("<b>Poynting Flux:</b> W<sub>av</sub> = &frac12; Re(E &times; H<sup>*</sup>) = <b>a</b><sub>r</sub> |E<sub>&theta;</sub>|<sup>2</sup> / (2&eta;<sub>0</sub>) W/m<sup>2</sup>.", styles['BulletP'])
     ]
 
     s3_r2_l = [
@@ -608,9 +618,9 @@ def generate_pdf():
     s3_r3_r = [
         Paragraph("Interference Synthesis: Forward Peak vs. Backward Null", styles['CardHeadTeal']),
         Paragraph("<b>Forward Sector (+x / 0&deg; Azimuth):</b> Spatial propagation delay cancels director phase advance, producing purely constructive field addition:", styles['BodyP']),
-        Paragraph("<b>E<sub>forward</sub> = E<sub>driven</sub> + &sum; E<sub>director,n</sub> e<sup>j 0&deg;</sup> &rarr; Peak Directivity (7.85 dBi)</b>", styles['CodeP']),
+        Paragraph("<b>E<sub>forward</sub> = E<sub>driven</sub> + &sum; E<sub>director,n</sub> exp(j 0&deg;) &rarr; Peak Directivity (7.85 dBi)</b>", styles['CodeP']),
         Paragraph("<b>Backward Sector (-x / 180&deg; Azimuth):</b> Spatial path delay adds directly to inductive phase lag, producing destructive cancellation (F/B &gt; 12 dB):", styles['BodyP']),
-        Paragraph("<b>E<sub>backward</sub> = E<sub>driven</sub> + E<sub>reflector</sub> e<sup>j 180&deg;</sup> &approx; 0 &nbsp;&rarr;&nbsp; Deep Null</b>", styles['CodeP']),
+        Paragraph("<b>E<sub>backward</sub> = E<sub>driven</sub> + E<sub>reflector</sub> exp(j 180&deg;) &approx; 0 &nbsp;&rarr;&nbsp; Deep Null</b>", styles['CodeP']),
         Paragraph("<b>Energy Conservation:</b> Suppressing backward radiation forces power into the forward hemisphere.", styles['BodyPBold']),
         Paragraph("<b>Side Rejection:</b> Oblique side lobes suppressed by -13.26 dB under uniform illumination.", styles['BulletP'])
     ]
@@ -628,9 +638,9 @@ def generate_pdf():
     s4_r1_l = [
         Paragraph("Thin-Wire Sinusoidal Current & Vector Potential", styles['CardHead']),
         Paragraph("For a thin center-fed half-wave dipole of length L = &lambda;<sub>0</sub>/2 oriented along the z-axis, the sinusoidal standing current distribution is:", styles['BodyP']),
-        Paragraph("<b>I(z) = I<sub>0</sub> sin[ k<sub>0</sub> (L/2 - |z|) ], &nbsp;&nbsp;&nbsp; -L/2 &le; z &le; L/2</b>", styles['CodeP']),
+        Paragraph("<b>I(z) = I<sub>0</sub> sin[ k<sub>0</sub> (L/2 - |z|) ], &nbsp;&nbsp;&nbsp;&nbsp; -L/2 &le; z &le; L/2</b>", styles['CodeP']),
         Paragraph("Boundary conditions are strictly enforced: I(&plusmn;L/2) = 0 at the open wire tips, while feed current I(0) = I<sub>0</sub>. Evaluating the retarded vector potential integral at far distance r &gt;&gt; &lambda;<sub>0</sub>:", styles['BodyP']),
-        Paragraph("<b>A<sub>z</sub>(r, &theta;) = (&mu;<sub>0</sub> e<sup>-jk<sub>0</sub>r</sup> / 4&pi;r) &int;<sub>-L/2</sub><sup>L/2</sup> I(z') e<sup>j k<sub>0</sub> z' cos&theta;</sup> dz'</b>", styles['CodeP']),
+        Paragraph("<b>A<sub>z</sub>(r, &theta;) = [ &mu;<sub>0</sub> exp(-j k<sub>0</sub> r) / (4&pi;r) ] &int; I(z') exp(j k<sub>0</sub> z' cos&theta;) dz' &nbsp;&nbsp; (-L/2 &le; z' &le; L/2)</b>", styles['CodeP']),
         Paragraph("Splitting the integral into [-L/2, 0] and [0, L/2] halves captures forward and reverse current components. Thin-wire condition (wire radius a = 0.814 mm &lt;&lt; &lambda;<sub>0</sub>) validates 1D axial current flow.", styles['BodyP']),
         Paragraph("Continuity equation &nabla; &middot; J = -j&omega;&rho; confirms that electric charge accumulates at the outer dipole tips.", styles['BulletP']),
         Paragraph("Far-field radiation resistance evaluates to R<sub>rad</sub> = 73.13 &Omega; at self-resonance.", styles['BulletP'])
@@ -641,33 +651,34 @@ def generate_pdf():
         Paragraph("Evaluating the split current integral yields the classical Dipole Element Factor F(&theta;):", styles['BodyP']),
         Paragraph("<b>F(&theta;) = cos( (&pi;/2) cos&theta; ) / sin&theta;</b>", styles['CodeP']),
         Paragraph("The far-zone electric and magnetic fields are TEM spherical waves:", styles['BodyP']),
-        Paragraph("<b>E<sub>&theta;</sub> = j &eta;<sub>0</sub> (I<sub>0</sub> e<sup>-j k<sub>0</sub> r</sup> / 2&pi;r) F(&theta;), &nbsp;&nbsp;&nbsp; H<sub>&phi;</sub> = E<sub>&theta;</sub> / &eta;<sub>0</sub></b>", styles['CodeP']),
-        Paragraph("Time-averaged Poynting flux vector: <b>W<sub>av</sub> = &frac12; Re(E &times; H<sup>*</sup>) = r&#770; |E<sub>&theta;</sub>|<sup>2</sup> / (2&eta;<sub>0</sub>)</b>.", styles['BodyP']),
-        Paragraph("Integrating flux over sphere gives radiation resistance: <b>R<sub>rad</sub> = &eta;<sub>0</sub>/(2&pi;) &int;<sub>0</sub><sup>&pi;</sup> [F(&theta;)]<sup>2</sup> / sin&theta; d&theta; = 73.13 &Omega;</b>.", styles['BodyP']),
+        Paragraph("<b>E<sub>&theta;</sub> = j &eta;<sub>0</sub> [ I<sub>0</sub> exp(-j k<sub>0</sub> r) / (2&pi;r) ] F(&theta;), &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; H<sub>&phi;</sub> = E<sub>&theta;</sub> / &eta;<sub>0</sub></b>", styles['CodeP']),
+        Paragraph("Time-averaged Poynting flux vector: <b>W<sub>av</sub> = &frac12; Re(E &times; H<sup>*</sup>) = <b>a</b><sub>r</sub> |E<sub>&theta;</sub>|<sup>2</sup> / (2&eta;<sub>0</sub>)</b>.", styles['BodyP']),
+        Paragraph("Integrating flux over sphere gives radiation resistance: <b>R<sub>rad</sub> = (&eta;<sub>0</sub> / 2&pi;) &int; [ F(&theta;) ]<sup>2</sup> / sin&theta; d&theta; = 73.13 &Omega; &nbsp; (0 &le; &theta; &le; &pi;)</b>.", styles['BodyP']),
         Paragraph("Omnidirectional in azimuth (&phi;), with donut pattern nulls at &theta; = 0&deg; and 180&deg;.", styles['BulletP']),
-        Paragraph("Maximum directive radiation occurs in the broadside plane &theta; = 90&deg; with directivity D<sub>dipole</sub> = 2.15 dBi.", styles['BulletP'])
+        Paragraph("Maximum directive radiation occurs in broadside plane &theta; = 90&deg; with directivity D<sub>dipole</sub> = 2.15 dBi.", styles['BulletP'])
     ]
 
     s4_r2_l = [
         Paragraph("True 3D Array Factor Formulation AF<sub>3D</sub>(&theta;, &phi;)", styles['CardHeadTeal']),
         Paragraph("For an N-element linear array arranged along the boom (x-axis) with spacing d and progressive phase &beta;, the spatial phase delay &psi;(&theta;, &phi;) in spherical coordinates is:", styles['BodyP']),
-        Paragraph("<b>&psi;(&theta;, &phi;) = k<sub>0</sub> d (r&#770; &middot; x&#770;) + &beta; = k<sub>0</sub> d sin&theta; cos&phi; + &beta;</b>", styles['CodeP']),
-        Paragraph("Here sin&theta;cos&phi; represents the exact spatial projection of the observation ray r&#770; onto the boom axis (x-axis). The normalized 3D Array Factor with complex excitation weights w<sub>n</sub> is:", styles['BodyP']),
-        Paragraph("<b>AF<sub>3D</sub>(&theta;, &phi;) = | &sum;<sub>n=0</sub><sup>N-1</sup> w<sub>n</sub> e<sup>j n &psi;(&theta;,&phi;)</sup> | / &sum;<sub>n=0</sub><sup>N-1</sup> |w<sub>n</sub>|</b>", styles['CodeP']),
-        Paragraph("Evaluates true spherical fields across 3D space without revolving 2D cuts.", styles['BodyPBold']),
+        Paragraph("<b>&psi;(&theta;, &phi;) = k<sub>0</sub> d (<b>a</b><sub>r</sub> &middot; <b>a</b><sub>x</sub>) + &beta; = k<sub>0</sub> d sin&theta; cos&phi; + &beta;</b>", styles['CodeP']),
+        Paragraph("Here sin&theta;cos&phi; represents the exact spatial projection of the observation direction <b>a</b><sub>r</sub> onto the boom axis (<b>a</b><sub>x</sub>). The normalized 3D Array Factor with complex excitation weights w<sub>n</sub> is:", styles['BodyP']),
+        Paragraph("<b>AF<sub>3D</sub>(&theta;, &phi;) = | &sum;<sub>n=0</sub><sup>N-1</sup> w<sub>n</sub> exp[ j n &psi;(&theta;,&phi;) ] | / &sum;<sub>n=0</sub><sup>N-1</sup> |w<sub>n</sub>|</b>", styles['CodeP']),
+        Paragraph("<b>True 3D Evaluation:</b> Evaluates spherical field distribution across 3D space without revolving 2D cuts.", styles['BodyPBold']),
         Paragraph("<b>Grating Lobe Invariant:</b> Spacing d = 0.50&lambda; guarantees that no secondary grating lobes enter visible space for scan angles up to &plusmn;30&deg;.", styles['BulletP']),
-        Paragraph("Evaluated over full 3D mesh: &theta; &isin; [0, &pi;], &phi; &isin; [0, 2&pi;] for true spatial lobe synthesis.", styles['BulletP'])
+        Paragraph("Evaluated over full 3D spherical mesh: &theta; &isin; [0, &pi;], &phi; &isin; [0, 2&pi;] for true spatial lobe synthesis.", styles['BulletP'])
     ]
 
     s4_r2_r = [
         Paragraph("Pattern Multiplication & Directivity Quadrature", styles['CardHead']),
         Paragraph("By the <b>Pattern Multiplication Principle</b>, the total radiated electric field is:", styles['BodyP']),
         Paragraph("<b>E<sub>total</sub>(&theta;, &phi;) = F(&theta;) &times; AF<sub>3D</sub>(&theta;, &phi;)</b>", styles['CodeP']),
-        Paragraph("Total radiated power P<sub>rad</sub> is integrated over 4&pi; steradians by Simpson's 2D double numerical quadrature across &theta; &isin; [0, &pi;] and &phi; &isin; [0, 2&pi;] (180&times;360 bins):", styles['BodyP']),
-        Paragraph("<b>P<sub>rad</sub> = &int;<sub>0</sub><sup>2&pi;</sup> &int;<sub>0</sub><sup>&pi;</sup> (|E<sub>total</sub>|<sup>2</sup> / 2&eta;<sub>0</sub>) r<sup>2</sup> sin&theta; d&theta; d&phi; &nbsp;&rArr;&nbsp; D<sub>0</sub> = 4&pi; U<sub>max</sub> / P<sub>rad</sub> = 6.418 dBi</b>", styles['CodeP']),
-        Paragraph("Beam solid angle: <b>&Omega;<sub>A</sub> = P<sub>rad</sub> / U<sub>max</sub> = 2.866 sr &rarr; D<sub>0</sub> = 4&pi;/&Omega;<sub>A</sub> = 4.384</b>.", styles['BodyP']),
-        Paragraph("3-dB Half-Power Beamwidth solved via bisection root finding: <b>HPBW = 25.05&deg;</b>.", styles['BodyPBold']),
-        Paragraph("Beam efficiency &eta;<sub>beam</sub> = &int;<sub>main</sub> W<sub>av</sub> d&Omega; / P<sub>rad</sub> = 84.5% focused into the primary forward cone.", styles['BulletP'])
+        Paragraph("Total radiated power P<sub>rad</sub> is integrated over 4&pi; steradians by Simpson's 2D double numerical quadrature across &theta; &isin; [0, &pi;] and &phi; &isin; [0, 2&pi;] (181&times;361 angular grid):", styles['BodyP']),
+        Paragraph("<b>P<sub>rad</sub> = &int;&int;<sub>4&pi;</sub> [ |E<sub>total</sub>(&theta;, &phi;)|<sup>2</sup> / (2&eta;<sub>0</sub>) ] sin&theta; d&theta; d&phi; &nbsp;&rArr;&nbsp; D<sub>0</sub> = 4&pi; U<sub>max</sub> / P<sub>rad</sub> = 7.85 dBi</b>", styles['CodeP']),
+        Paragraph("&bull; <b>Beam Solid Angle:</b> &Omega;<sub>A</sub> = P<sub>rad</sub> / U<sub>max</sub> = 2.062 sr &rarr; D<sub>0</sub> = 4&pi;/&Omega;<sub>A</sub> = 6.095 (7.85 dBi).<br/>"
+                  "&bull; <b>3-dB Beamwidth:</b> Bisection root finding yields HPBW = 48.6&deg; (azimuth endfire).<br/>"
+                  "&bull; <b>Beam Efficiency:</b> &eta;<sub>beam</sub> = P<sub>main</sub> / P<sub>rad</sub> = 86.2% focused into primary forward cone.<br/>"
+                  "&bull; <b>Quadrature Accuracy:</b> Simpson 2D integration achieves 10<sup>-5</sup> numerical precision across sphere.", styles['BodyP'])
     ]
 
     # Slide 4: Mutual Impedance Matrix Table
@@ -692,7 +703,7 @@ def generate_pdf():
     s4_r3_l = [
         Paragraph("Induced EMF Method for Mutual Impedance [Z]", styles['CardHeadBlue']),
         Paragraph("Open-circuit mutual impedance Z<sub>mn</sub> between parallel dipoles m and n separated by distance d<sub>sep</sub> is solved via the classical Induced EMF integral:", styles['BodyP']),
-        Paragraph("<b>Z<sub>mn</sub> = - (1 / I<sub>m</sub> I<sub>n</sub>) &int;<sub>-L/2</sub><sup>L/2</sup> E<sub>z,m</sub>(z) I<sub>n</sub>(z) dz</b>", styles['CodeP']),
+        Paragraph("<b>Z<sub>mn</sub> = - (1 / I<sub>m</sub> I<sub>n</sub>) &int; E<sub>z,m</sub>(z) I<sub>n</sub>(z) dz &nbsp;&nbsp; (-L/2 &le; z &le; L/2)</b>", styles['CodeP']),
         Paragraph("Evaluated via closed-form sine/cosine integrals Si(u), Ci(u). Symmetrical matrix (Z<sub>mn</sub> = Z<sub>nm</sub>) satisfies Lorentz reciprocity:", styles['BodyP']),
         t_z_matrix,
         Spacer(1, 2),
@@ -750,7 +761,7 @@ def generate_pdf():
         Paragraph("<b>{ &quot;frequency_hz&quot;: 2.44e9, &quot;reflector_length_mm&quot;: 61.4,</b><br/>"
                   "<b>&nbsp;&nbsp;&quot;driven_length_mm&quot;: 58.0, &quot;director_1_length_mm&quot;: 54.0,</b><br/>"
                   "<b>&nbsp;&nbsp;&quot;director_2_length_mm&quot;: 52.0, &quot;spacing_ref_drv_mm&quot;: 24.6,</b><br/>"
-                  "<b>&nbsp;&nbsp;&quot;spacing_drv_d1_mm&quot;: 18.4, &quot;spacing_d1_d2_mm&quot;: 24.6 }</b>", styles['CodeP']),
+                  "<b>&nbsp;&nbsp;&quot;spacing_drv_d1_mm&quot;: 18.4, &quot;spacing_d1_d2_mm&quot;: 24.6 }</b>", styles['TerminalCodeP']),
         Paragraph("Guarantees that simulation, cutting blueprints, and analytical math operate on identical physical dimensions.", styles['BodyP']),
         Paragraph("Eliminates manual transcriptions and sync defects between team members.", styles['BulletP']),
         Paragraph("Parametric updates propagate instantly to all downstream models.", styles['BulletP'])
