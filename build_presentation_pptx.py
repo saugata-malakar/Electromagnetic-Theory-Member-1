@@ -1,19 +1,18 @@
 """
 build_presentation_pptx.py
 ==========================
-Generates the definitive 16:9 widescreen PowerPoint presentation (.pptx):
+Generates the visually stunning, publication-grade 16:9 widescreen PowerPoint deck:
 'EC3104_15_Slide_Capstone_Presentation.pptx'
 
 EC-3104 Electromagnetic Theory | Senior Capstone Project
 Project Lead & Member 1 (The Math Brain & GUI Builder)
 
-Presentation Features:
-1. True 16:9 Widescreen (13.333 x 7.5 in) presentation layout.
-2. Large, high-impact presentation typography (21-22 pt slide titles, 13.5 pt card titles, 12-13 pt body bullets, 18-22 pt metric callouts).
-3. Highly focused, highlighted content: punchy key findings, bold electrodynamic principles, and verified benchmarks.
-4. Embedded high-resolution result graphs, 3D radiation models, circuit schematics, and hardware blueprints without overlaps.
-5. Strictly EXACTLY 15 slides matching the project structure and rubric.
-6. Strictly NO personal student names: Member 1 (Project Lead), Member 2, Member 3, Member 4.
+Key Enhancements for Visual Excellence:
+1. Editorial trimming: Concise, punchy bullets with bold keyword lead-ins.
+2. Presentation typography: 21 pt titles, 13.5 pt card headers, 12.5 pt bullets, 11.5 pt formulas.
+3. Perfect geometric alignment: Zero overlaps, generous margins, razor-sharp bottom bounds.
+4. Embedded high-resolution diagrams and plots with clean card framing.
+5. Strictly 15 slides matching the course rubric and anonymous member designations.
 """
 
 import os
@@ -135,7 +134,6 @@ SLIDES_METADATA = [
 
 def add_slide_decorations(slide, slide_num, title, subtitle, role_badge):
     """Draws presentation header, badge, footer, and slide number."""
-    # Top title box
     tb_title = slide.shapes.add_textbox(Inches(0.6), Inches(0.35), Inches(8.5), Inches(0.85))
     tf_t = tb_title.text_frame
     tf_t.word_wrap = True
@@ -156,7 +154,6 @@ def add_slide_decorations(slide, slide_num, title, subtitle, role_badge):
     p_sub.font.size = Pt(11)
     p_sub.font.color.rgb = TEXT_MUTED
 
-    # Role badge at top right
     badge_w = Inches(3.6)
     badge_h = Inches(0.40)
     badge_l = Inches(13.333 - 0.6) - badge_w
@@ -176,19 +173,16 @@ def add_slide_decorations(slide, slide_num, title, subtitle, role_badge):
     p_b.font.color.rgb = WHITE
     p_b.alignment = PP_ALIGN.CENTER
 
-    # Thin divider under header
     line = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(1.22), Inches(12.133), Inches(0.02))
     line.fill.solid()
     line.fill.fore_color.rgb = BORDER_LIGHT
     line.line.fill.background()
 
-    # Footer divider
     line_f = slide.shapes.add_shape(MSO_SHAPE.RECTANGLE, Inches(0.6), Inches(7.08), Inches(12.133), Inches(0.015))
     line_f.fill.solid()
     line_f.fill.fore_color.rgb = BORDER_LIGHT
     line_f.line.fill.background()
 
-    # Footer text
     tb_foot = slide.shapes.add_textbox(Inches(0.6), Inches(7.12), Inches(9.0), Inches(0.3))
     tf_f = tb_foot.text_frame
     tf_f.vertical_anchor = MSO_ANCHOR.TOP
@@ -199,7 +193,6 @@ def add_slide_decorations(slide, slide_num, title, subtitle, role_badge):
     p_foot.font.size = Pt(9.5)
     p_foot.font.color.rgb = TEXT_MUTED
 
-    # Page number
     tb_num = slide.shapes.add_textbox(Inches(10.733), Inches(7.12), Inches(2.0), Inches(0.3))
     tf_n = tb_num.text_frame
     tf_n.vertical_anchor = MSO_ANCHOR.TOP
@@ -267,8 +260,8 @@ def add_image_card(slide, left, top, width, height, title, title_color, img_path
 
     return card
 
-def add_bullet_point(tf, bold_prefix, body_text, font_size=12.2, space_after=3.5, bullet_char="• "):
-    """Appends a bullet point with bold lead-in and regular description."""
+def add_bullet_point(tf, bold_prefix, body_text, font_size=12.5, space_after=3.5, bullet_char="• "):
+    """Appends a bullet point with bold lead-in and concise body text."""
     p = tf.add_paragraph()
     p.space_after = Pt(space_after)
 
@@ -286,7 +279,7 @@ def add_bullet_point(tf, bold_prefix, body_text, font_size=12.2, space_after=3.5
     r_t.font.bold = False
     r_t.font.color.rgb = TEXT_MAIN
 
-def add_code_formula(tf, formula_text, font_size=11.2, space_after=3.5):
+def add_code_formula(tf, formula_text, font_size=11.5, space_after=3.5):
     """Adds a highlighted formula / code block inside card text frame."""
     p = tf.add_paragraph()
     p.space_after = Pt(space_after)
@@ -307,7 +300,6 @@ def add_styled_table(slide, left, top, width, height, headers, rows_data, col_wi
     for idx, w in enumerate(col_widths):
         t.columns[idx].width = w
 
-    # Headers
     for c_idx, h in enumerate(headers):
         cell = t.cell(0, c_idx)
         cell.fill.solid()
@@ -321,7 +313,6 @@ def add_styled_table(slide, left, top, width, height, headers, rows_data, col_wi
         p.font.color.rgb = WHITE
         p.alignment = PP_ALIGN.CENTER
 
-    # Data Rows
     for r_idx, row in enumerate(rows_data):
         row_num = r_idx + 1
         bg = WHITE if (r_idx % 2 == 0) else ROW_ALT_BG
@@ -349,7 +340,7 @@ def build_presentation():
     prs.slide_height = Inches(7.5)
     blank_layout = prs.slide_layouts[6]
 
-    print("Building Pixel-Perfect 15-Slide Presentation Deck...")
+    print("Building Stunning 15-Slide Presentation Deck...")
 
     # =========================================================================
     # SLIDE 1: Title & Capstone Defense Overview
@@ -359,31 +350,31 @@ def build_presentation():
     add_slide_decorations(slide1, meta["slide"], meta["title"], meta["subtitle"], meta["role"])
 
     tf1_tl = create_card_shape(slide1, Inches(0.6), Inches(1.32), Inches(5.92), Inches(2.25),
-                               "Project Identity & Engineering Scope", BLUE_ACCENT)
-    add_bullet_point(tf1_tl, "Lead Author / Presenter:", "Member 1 (Project Lead) — 'The Math Brain & GUI Builder'", 12.5)
-    add_bullet_point(tf1_tl, "Academic Course:", "EC-3104 Electromagnetic Theory (Autumn Final Capstone Defense)", 12.5)
-    add_bullet_point(tf1_tl, "Operating Band:", "2.440 GHz ISM Spectrum (λ₀ = 12.29 cm, k₀ = 51.14 rad/m)", 12.5)
-    add_bullet_point(tf1_tl, "Engineering Split:", "~85% Software (Custom CEM Solver + GUI + MoM) & ~15% Hardware (Wire array + ESP32)", 12.5)
+                               "Project Identity & Scope", BLUE_ACCENT)
+    add_bullet_point(tf1_tl, "Lead Author:", "Member 1 (Project Lead) — Analytical EM & GUI Lead", 12.5)
+    add_bullet_point(tf1_tl, "Course & Defense:", "EC-3104 Electromagnetic Theory (Final Senior Defense)", 12.5)
+    add_bullet_point(tf1_tl, "Design Center:", "2.440 GHz ISM Band (λ₀ = 12.29 cm, k₀ = 51.14 rad/m)", 12.5)
+    add_bullet_point(tf1_tl, "Effort Allocation:", "~85% Software (CEM Solver + MoM) | ~15% Hardware Validation", 12.5)
 
     tf1_tr = create_card_shape(slide1, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.25),
-                               "Executive Challenge & Directive Solution", NAVY_PRIMARY)
-    add_bullet_point(tf1_tr, "The Congestion Problem:", "Omnidirectional antennas suffer severe 1/R² Friis path loss, multipath fading & collisions.", 12.5)
-    add_bullet_point(tf1_tr, "The Directive Solution:", "4-element parasitic array combines Yagi induction with beamforming for 7.85 dBi gain & >40 dB nulls.", 12.5)
-    add_bullet_point(tf1_tr, "Software-First Paradigm:", "Custom CEM math & MoM simulation predict behavior before fabrication, eliminating blind trial-and-error.", 12.5)
+                               "Challenge & Directive Solution", NAVY_PRIMARY)
+    add_bullet_point(tf1_tr, "Congestion Challenge:", "Omnidirectional antennas suffer heavy 43.7 dB path loss & collisions.", 12.5)
+    add_bullet_point(tf1_tr, "Directive Solution:", "4-element array delivers 7.85 dBi gain and >40 dB spatial nulls.", 12.5)
+    add_bullet_point(tf1_tr, "Software-First Paradigm:", "CEM physics & MoM simulate physical behavior prior to fabrication.", 12.5)
 
     team_headers = ["Member Designation", "Core Engineering Focus", "Key Electrodynamic Responsibilities", "Primary Deliverables"]
     team_rows = [
-        ["Member 1 (Project Lead)", "Analytical EM Engine Lead & Interactive GUI Builder",
-         "Vector potentials, Induced EMF [Z] matrix, D₀ quadrature, Schelkunoff null-steering, true 3D spatial field (array_pattern_3d)",
+        ["Member 1 (Project Lead)", "Analytical EM Engine & GUI Lead",
+         "Vector potentials, Induced EMF [Z] matrix, D₀ quadrature, Schelkunoff null-steering, array_pattern_3d",
          "antenna_math_engine.py\nantenna_gui.py"],
-        ["Member 2", "Full-Wave EM Simulation & Circuit Modeling",
-         "4nec2 Method of Moments (MoM), wire discretization (≥11 seg/λ), S11 tuning (-27.8 dB), and Smith chart locus",
+        ["Member 2", "Full-Wave Simulation & Modeling",
+         "4nec2 Method of Moments, wire discretization (≥11 seg/λ), S11 tuning (-27.8 dB), Smith chart",
          "simulate_yagi.py\noptimized_dimensions.json"],
-        ["Member 3", "Hardware Fabrication & Mechanical Test Rig",
-         "14 AWG solid copper wire cutting (±0.2 mm), λ/4 RG-316 Pawsey balun, acrylic boom spine, 360° protractor turntable",
+        ["Member 3", "Hardware Fabrication & Rig",
+         "14 AWG wire cutting (±0.2 mm), λ/4 RG-316 Pawsey balun, acrylic boom, 360° protractor turntable",
          "dimension_calculator.py\nPhysical 4-el prototype rig"],
-        ["Member 4", "Empirical Telemetry & Far-Field Validation",
-         "Dual ESP32 Wi-Fi RSSI sniffer (+20 dBm Ch. 7), Fraunhofer far-field range (1.5 m > 2D²/λ), 36-point polar sweeps",
+        ["Member 4", "Telemetry & Empirical Validation",
+         "Dual ESP32 Wi-Fi sniffer (+20 dBm Ch. 7), Fraunhofer range (1.5 m > 2D²/λ), 36-point sweeps",
          "esp32_rssi_telemetry.ino\nempirical_pattern.csv"]
     ]
     team_widths = [Inches(2.2), Inches(2.2), Inches(5.333), Inches(2.4)]
@@ -398,18 +389,18 @@ def build_presentation():
     add_slide_decorations(slide2, meta["slide"], meta["title"], meta["subtitle"], meta["role"])
 
     tf2_tl = create_card_shape(slide2, Inches(0.6), Inches(1.32), Inches(5.92), Inches(2.35),
-                               "The 2.4 GHz ISM Congestion Problem", NAVY_PRIMARY)
-    add_bullet_point(tf2_tl, "Extreme Congestion:", "Unlicensed 2.400-2.4835 GHz band is shared by Wi-Fi, Bluetooth, ZigBee, and industrial emitters.", 13.0)
-    add_bullet_point(tf2_tl, "Friis Path Attenuation:", "Omnidirectional radiation scatters energy over 4π sr; free-space loss exceeds 43.7 dB at only 1.5 m.", 13.0)
-    add_bullet_point(tf2_tl, "Multipath Fading:", "Reflections off classroom boundaries cause destructive frequency-selective fading nulls.", 13.0)
-    add_bullet_point(tf2_tl, "Spatial Collisions:", "Omnidirectional antennas accept hostile interference equally from all azimuth directions.", 13.0)
+                               "2.4 GHz ISM Spectrum Congestion", NAVY_PRIMARY)
+    add_bullet_point(tf2_tl, "Dense Interference:", "2.400-2.484 GHz band shared by Wi-Fi, Bluetooth, ZigBee & microwaves.", 12.5)
+    add_bullet_point(tf2_tl, "Friis Path Attenuation:", "Omnidirectional free-space loss exceeds 43.7 dB at only 1.5 m separation.", 12.5)
+    add_bullet_point(tf2_tl, "Multipath Destructive Nulls:", "Reflections off boundaries create deep frequency-selective fading notches.", 12.5)
+    add_bullet_point(tf2_tl, "Spatial Collisions:", "Omnidirectional receivers accept interferers equally from all azimuth angles.", 12.5)
 
     tf2_tr = create_card_shape(slide2, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.35),
                                "Directive Array Electrodynamic Solution", BLUE_ACCENT)
-    add_bullet_point(tf2_tr, "Forward Gain Multiplication:", "Directive main beam boosts effective received SNR by >5.5 dB over a standard dipole.", 13.0)
-    add_bullet_point(tf2_tr, "Spatial Multipath Filtering:", "Narrow azimuth beamwidth (HPBW ≈ 48°-52°) naturally rejects oblique scattered rays.", 13.0)
-    add_bullet_point(tf2_tr, "Adaptive Null Steering:", "Synthesizes deep mathematical zeros (>40 dB) directly toward hostile jamming transmitters.", 13.0)
-    add_bullet_point(tf2_tr, "Ultra Low-Cost Fabrication:", "Passive parasitic coupling delivers high directional gain at sub-$20 total component cost.", 13.0)
+    add_bullet_point(tf2_tr, "Forward Gain Advantage:", "Directive main beam provides +5.5 dB SNR boost over a standard dipole.", 12.5)
+    add_bullet_point(tf2_tr, "Spatial Filtering:", "Sharp azimuth beamwidth (HPBW ≈ 50°) rejects oblique multipath rays.", 12.5)
+    add_bullet_point(tf2_tr, "Adaptive Nulling:", "Synthesizes mathematical zeros (>40 dB) directly toward hostile jammers.", 12.5)
+    add_bullet_point(tf2_tr, "Sub-$20 Architecture:", "Passive parasitic coupling delivers high gain at minimal component cost.", 12.5)
 
     bench_headers = ["Electrodynamic Parameter", "Analytical ULA", "4nec2 Simulation", "Prototype Telemetry", "Target Requirement", "Design Outcome"]
     bench_rows = [
@@ -431,34 +422,34 @@ def build_presentation():
     add_slide_decorations(slide3, meta["slide"], meta["title"], meta["subtitle"], meta["role"])
 
     tf3_1 = create_card_shape(slide3, Inches(0.6), Inches(1.32), Inches(5.92), Inches(2.65),
-                              "Time-Harmonic Maxwell Equations & Lorenz Decoupling", NAVY_PRIMARY)
+                              "Maxwell Equations & Lorenz Gauge Decoupling", NAVY_PRIMARY)
     add_code_formula(tf3_1, "∇ × E = -jωμ₀ H             ∇ × H = jωε₀ E + J")
-    add_bullet_point(tf3_1, "Lorenz Gauge Decoupling:", "∇ · A = -jωμ₀ε₀ Φ decouples potentials into ∇²A + k₀²A = -μ₀ J.", 12.2)
-    add_bullet_point(tf3_1, "Wavenumber in Air:", "k₀ = 2π / λ₀ = ω√(μ₀ε₀) ≈ 51.137 rad/m (λ₀ = 12.29 cm).", 12.2)
-    add_bullet_point(tf3_1, "Charge Continuity:", "∇ · J = -jωρ confirms electric charge accumulates at outer wire tips.", 12.2)
+    add_bullet_point(tf3_1, "Lorenz Decoupling:", "∇ · A = -jωμ₀ε₀ Φ decouples potentials into ∇²A + k₀²A = -μ₀ J.", 12.2)
+    add_bullet_point(tf3_1, "Wavenumber in Air:", "k₀ = 2π / λ₀ = 51.14 rad/m launches transverse TEM radiation.", 12.2)
+    add_bullet_point(tf3_1, "Charge Continuity:", "∇ · J = -jωρ validates electric charge accumulation at wire tips.", 12.2)
 
     tf3_2 = create_card_shape(slide3, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.65),
-                              "Retarded Vector Potential & Far-Field Poynting Flux", BLUE_ACCENT)
+                              "Retarded Potentials & Far-Field Poynting Flux", BLUE_ACCENT)
     add_code_formula(tf3_2, "A(r) = (μ₀ / 4π) ∭ [ J(r') exp(-j k₀|r - r'|) / |r - r'| ] dV'")
-    add_bullet_point(tf3_2, "Fraunhofer TEM Waves:", "E_far = -jω(A_θ a_θ + A_φ a_φ); H_far = (1/η₀) a_r × E_far (η₀ ≈ 376.73 Ω).", 12.2)
-    add_bullet_point(tf3_2, "Poynting Flux Vector:", "W_av = ½ Re(E × H*) = a_r |E_θ|² / (2η₀) [W/m²] defines directed radiation.", 12.2)
-    add_bullet_point(tf3_2, "Pure Far Radiation:", "Radial Er decays as 1/r², leaving pure transverse electrodynamic energy.", 12.2)
+    add_bullet_point(tf3_2, "Fraunhofer Spherical Waves:", "E_far = -jω(A_θ a_θ + A_φ a_φ); H_far = (1/η₀) a_r × E_far (η₀ ≈ 376.7 Ω).", 12.2)
+    add_bullet_point(tf3_2, "Poynting Flux:", "W_av = ½ Re(E × H*) = a_r |E_θ|² / (2η₀) [W/m²] defines directed radiation.", 12.2)
+    add_bullet_point(tf3_2, "Pure Far Radiation:", "Radial field Er decays as 1/r², leaving pure transverse radiated power.", 12.2)
 
     tf3_3 = create_card_shape(slide3, Inches(0.6), Inches(4.15), Inches(5.92), Inches(2.75),
-                              "Reflector Inductive Phase Lag & Backfire Cancellation", TEAL_ACCENT)
-    add_bullet_point(tf3_3, "Reflector Geometry:", "L_ref = 61.4 mm (0.500λ₀) > resonant length (λ₀/2).", 12.2)
-    add_bullet_point(tf3_3, "Inductive Reactance:", "Cut longer than resonance → exhibits net inductive reactance (+j42.5 Ω).", 12.2)
-    add_bullet_point(tf3_3, "Destructive Null:", "Induced current lags field by ~108°. Spacing d = 0.20λ₀ adds 72° travel delay:", 12.2)
+                              "Reflector Inductive Phase Lag (Backfire Null)", TEAL_ACCENT)
+    add_bullet_point(tf3_3, "Geometry:", "L_ref = 61.4 mm (0.500λ₀) cut longer than resonant half-wavelength.", 12.2)
+    add_bullet_point(tf3_3, "Inductive Reactance:", "Cut longer than resonance → net inductive reactance (+j42.5 Ω).", 12.2)
+    add_bullet_point(tf3_3, "Transit & Lag Sum:", "Induced current lags field by ~108°; spacing d = 0.20λ₀ adds 72° travel delay.", 12.2)
     add_code_formula(tf3_3, "Δφ_back = φ_spatial + φ_inductive = 72° + 108° = 180° → Destructive Null")
-    add_bullet_point(tf3_3, "Reflector Shielding:", "Directs power forward; measured Front-to-Back ratio reaches 12.40 dB.", 12.2)
+    add_bullet_point(tf3_3, "Shielding Ratio:", "Suppresses backward radiation; measured F/B ratio reaches 12.40 dB.", 12.2)
 
     tf3_4 = create_card_shape(slide3, Inches(6.81), Inches(4.15), Inches(5.92), Inches(2.75),
-                              "Director Capacitive Phase Lead & Wavefront Focusing", NAVY_PRIMARY)
-    add_bullet_point(tf3_4, "Director Geometry:", "L_dir1 = 54.0 mm (0.439λ₀), L_dir2 = 52.0 mm (0.423λ₀) < resonant length.", 12.2)
-    add_bullet_point(tf3_4, "Capacitive Reactance:", "Cut shorter than resonance → exhibits net capacitive reactance (-j18 to -j24 Ω).", 12.2)
-    add_bullet_point(tf3_4, "Constructive In-Phase Addition:", "Induced currents lead wavefront by ~54°, canceling forward travel delay:", 12.2)
-    add_code_formula(tf3_4, "Δφ_fwd = φ_spatial - φ_capacitive = 54° - 54° ≈ 0° → Pure In-Phase Reinforcement")
-    add_bullet_point(tf3_4, "Endfire Directivity:", "Progressively pulls and sharpens traveling wavefront into 7.85 dBi beam.", 12.2)
+                              "Director Capacitive Phase Lead (Wavefront Focus)", NAVY_PRIMARY)
+    add_bullet_point(tf3_4, "Geometry:", "L_dir1 = 54.0 mm, L_dir2 = 52.0 mm (< λ₀/2) cut shorter than resonance.", 12.2)
+    add_bullet_point(tf3_4, "Capacitive Reactance:", "Cut shorter than resonance → net capacitive reactance (-j18 to -j24 Ω).", 12.2)
+    add_bullet_point(tf3_4, "Phase Lead Compensation:", "Induced currents lead wavefront by ~54°, canceling forward transit delay.", 12.2)
+    add_code_formula(tf3_4, "Δφ_fwd = φ_spatial - φ_capacitive = 54° - 54° ≈ 0° → Constructive Reinforcement")
+    add_bullet_point(tf3_4, "Endfire Directivity:", "Pulls traveling wavefronts forward into a sharp 7.85 dBi main beam.", 12.2)
 
     # =========================================================================
     # SLIDE 4: Mathematical Formulation & Array Theory
@@ -468,17 +459,17 @@ def build_presentation():
     add_slide_decorations(slide4, meta["slide"], meta["title"], meta["subtitle"], meta["role"])
 
     tf4_1 = create_card_shape(slide4, Inches(0.6), Inches(1.32), Inches(5.92), Inches(2.65),
-                              "Thin-Wire Standing Current & Element Factor", NAVY_PRIMARY)
+                              "Thin-Wire Standing Current & Dipole Factor", NAVY_PRIMARY)
     add_code_formula(tf4_1, "I(z) = I₀ sin[ k₀ (L/2 - |z|) ],    -L/2 ≤ z ≤ L/2")
     add_code_formula(tf4_1, "F(θ) = cos( (π/2) cosθ ) / sinθ    (Dipole Element Factor)")
     add_bullet_point(tf4_1, "Radiation Resistance:", "R_rad = (η₀/2π) ∫₀^π [F(θ)]²/sinθ dθ = 73.13 Ω at self-resonance.", 12.2)
-    add_bullet_point(tf4_1, "Thin-Wire Condition:", "Wire radius a = 0.814 mm << λ₀ validates 1D axial current assumption.", 12.2)
+    add_bullet_point(tf4_1, "Thin-Wire Kernel:", "Wire radius a = 0.814 mm << λ₀ validates 1D axial current flow.", 12.2)
 
     tf4_2 = create_card_shape(slide4, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.65),
                               "True 3D Array Factor & Directivity Quadrature", BLUE_ACCENT)
-    add_code_formula(tf4_2, "ψ(θ, φ) = k₀ d (a_r · a_x) + β = k₀ d sinθ cosφ + β")
+    add_code_formula(tf4_2, "ψ(θ, φ) = k₀ d sinθ cosφ + β")
     add_code_formula(tf4_2, "AF_3D(θ, φ) = | ∑ w_n exp[ j n ψ(θ,φ) ] | / ∑ |w_n|")
-    add_bullet_point(tf4_2, "Pattern Multiplication:", "E_total(θ, φ) = F(θ) × AF_3D(θ, φ) evaluates true 3D space.", 12.2)
+    add_bullet_point(tf4_2, "Pattern Multiplication:", "E_total(θ, φ) = F(θ) × AF_3D(θ, φ) evaluates true 3D spatial field.", 12.2)
     add_bullet_point(tf4_2, "Simpson 2D Quadrature:", "P_rad = ∬ [|E|²/2η₀] sinθ dθ dφ → Peak directivity D₀ = 7.85 dBi.", 12.2)
 
     tf4_3 = create_card_shape(slide4, Inches(0.6), Inches(4.15), Inches(5.92), Inches(2.75),
@@ -497,11 +488,11 @@ def build_presentation():
 
     tf4_4 = create_card_shape(slide4, Inches(6.81), Inches(4.15), Inches(5.92), Inches(2.75),
                               "Active Feedpoint Impedance & VSWR Matching", NAVY_PRIMARY)
-    add_bullet_point(tf4_4, "Matrix Inversion:", "Coupled 4x4 matrix inverted for active feedpoint impedance:", 12.2)
+    add_bullet_point(tf4_4, "Matrix Inversion:", "Coupled 4x4 system inverted for active driving impedance:", 12.2)
     add_code_formula(tf4_4, "Z_in = Z_22 - Z_2p [Z_pp]⁻¹ Z_p2 = 79.66 + j25.90 Ω")
-    add_bullet_point(tf4_4, "50 Ω Reflection Coefficient:", "Γ = (Z_in - Z₀)/(Z_in + Z₀) = 0.2978 ∠29.8°.", 12.2)
+    add_bullet_point(tf4_4, "50 Ω Coaxial Match:", "Γ = (Z_in - Z₀)/(Z_in + Z₀) = 0.298 ∠29.8°.", 12.2)
     add_code_formula(tf4_4, "VSWR = (1 + |Γ|) / (1 - |Γ|) = 1.848 < 2.0  (S11 = -10.52 dB)")
-    add_bullet_point(tf4_4, "Power Launched:", "Transmission T = 1 - |Γ|² = 91.13% delivered to array.", 12.2)
+    add_bullet_point(tf4_4, "Power Launched:", "Transmission T = 1 - |Γ|² = 91.13% delivered to radiating array.", 12.2)
 
     # =========================================================================
     # SLIDE 5: Software Architecture & Data Pipeline
@@ -511,18 +502,18 @@ def build_presentation():
     add_slide_decorations(slide5, meta["slide"], meta["title"], meta["subtitle"], meta["role"])
 
     tf5_tl = create_card_shape(slide5, Inches(0.6), Inches(1.32), Inches(5.92), Inches(2.35),
-                               "Decoupled Multi-Member Pipeline Strategy", NAVY_PRIMARY)
-    add_bullet_point(tf5_tl, "Isolated Member Folders:", "Dedicated branches & folders prevent Git merge conflicts during concurrent development.", 13.0)
-    add_bullet_point(tf5_tl, "Single Source of Truth:", "All IO routes strictly through shared data/ folder; no member keeps private copies.", 13.0)
-    add_bullet_point(tf5_tl, "Universal Configuration:", "RF design constants (f₀ = 2.44 GHz, λ₀, Z₀) defined centrally in emt_config.py.", 13.0)
-    add_bullet_point(tf5_tl, "Universal 36-Row CSV Contract:", "Exactly 36 rows (0°-350° in 10° steps) formatted strictly as angle_deg,gain_dBi.", 13.0)
+                               "Decoupled Architecture Strategy", NAVY_PRIMARY)
+    add_bullet_point(tf5_tl, "Isolated Workspaces:", "Dedicated folders prevent Git merge conflicts during concurrent development.", 12.5)
+    add_bullet_point(tf5_tl, "Single Source of Truth:", "All module outputs route strictly through the shared data/ folder.", 12.5)
+    add_bullet_point(tf5_tl, "Central Design Constants:", "f₀ = 2.44 GHz, λ₀, Z₀ defined centrally in emt_config.py.", 12.5)
+    add_bullet_point(tf5_tl, "Universal 36-Row CSV:", "36 points (0°-350° in 10° steps) formatted strictly as angle_deg,gain_dBi.", 12.5)
 
     tf5_tr = create_card_shape(slide5, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.35),
-                               "Geometry Contract & True 3D Engine Upgrades", BLUE_ACCENT)
-    add_bullet_point(tf5_tr, "Parametric JSON Contract:", "data/optimized_dimensions.json drives simulation, analytical solver, and blueprint.", 13.0)
+                               "Geometry Contract & 3D Math Engine", BLUE_ACCENT)
+    add_bullet_point(tf5_tr, "Parametric JSON Contract:", "data/optimized_dimensions.json drives solver, simulation & blueprint.", 12.5)
     add_code_formula(tf5_tr, "Ref: 61.4mm | Drv: 58.0mm | D1: 54.0mm | D2: 52.0mm | Spacings: [24.6, 18.4, 24.6]mm")
-    add_bullet_point(tf5_tr, "Authentic 3D Evaluation:", "Math engine evaluates true array_pattern_3d(θ, φ) across spherical coordinates.", 13.0)
-    add_bullet_point(tf5_tr, "Automated CI Guards:", "Regression assertions verify max(AF)=1.0, Poynting flux, and VSWR < 2.0 on every build.", 13.0)
+    add_bullet_point(tf5_tr, "Authentic 3D Fields:", "Math engine evaluates true array_pattern_3d(θ, φ) across spherical mesh.", 12.5)
+    add_bullet_point(tf5_tr, "Automated CI Guards:", "Unit tests verify max(AF)=1.0, Poynting flux, and VSWR < 2.0 on every build.", 12.5)
 
     pipe_headers = ["Step", "Responsible Member", "Execution Command", "Produced Artifact Contract", "Downstream Consumers"]
     pipe_rows = [
@@ -543,7 +534,6 @@ def build_presentation():
     slide6 = prs.slides.add_slide(blank_layout)
     add_slide_decorations(slide6, meta["slide"], meta["title"], meta["subtitle"], meta["role"])
 
-    # Top Left: Beam Steering Image + Bullets
     create_card_shape(slide6, Inches(0.6), Inches(1.32), Inches(5.92), Inches(2.80),
                       "Electronic Beam Steering Sweep", NAVY_PRIMARY)
     if os.path.exists("beam_steering.png"):
@@ -553,13 +543,12 @@ def build_presentation():
     tf6_1.word_wrap = True
     tf6_1.vertical_anchor = MSO_ANCHOR.TOP
     tf6_1.margin_left = tf6_1.margin_top = tf6_1.margin_right = tf6_1.margin_bottom = 0
-    add_bullet_point(tf6_1, "Progressive Phase β:", "Steers main beam without moving hardware.", 11.5)
+    add_bullet_point(tf6_1, "Phase Steering β:", "Steers beam electronically with zero moving parts.", 11.5)
     add_bullet_point(tf6_1, "β = 0°:", "Broadside peak at θ = 90° (6.42 dBi)", 11.5)
     add_bullet_point(tf6_1, "β = -45°:", "Steers to θ = 65°", 11.5)
     add_bullet_point(tf6_1, "β = +45°:", "Steers to θ = 115°", 11.5)
     add_bullet_point(tf6_1, "Scan Range:", "±30° grating-free sector; HPBW = 25.05°.", 11.5)
 
-    # Top Right: 3D Spherical Pattern Image + Bullets
     create_card_shape(slide6, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.80),
                       "True 3D Spatial Radiation Surface", BLUE_ACCENT)
     if os.path.exists("radiation_3d_spherical.png"):
@@ -569,21 +558,19 @@ def build_presentation():
     tf6_2.word_wrap = True
     tf6_2.vertical_anchor = MSO_ANCHOR.TOP
     tf6_2.margin_left = tf6_2.margin_top = tf6_2.margin_right = tf6_2.margin_bottom = 0
-    add_bullet_point(tf6_2, "True 3D Evaluation:", "Evaluates array_pattern_3d(θ, φ) directly on spherical mesh.", 11.5)
+    add_bullet_point(tf6_2, "True 3D Math:", "Direct spherical evaluation of array_pattern_3d.", 11.5)
     add_bullet_point(tf6_2, "No Revolved Cuts:", "Authentic non-symmetric 3D lobe topology.", 11.5)
     add_bullet_point(tf6_2, "Interactive GUI:", "Pop-up 3D modal with full orbit, pan & zoom.", 11.5)
-    add_bullet_point(tf6_2, "Color Mapping:", "Plasma colormap visualizes intensity in dBi.", 11.5)
+    add_bullet_point(tf6_2, "Plasma Colormap:", "Visualizes radiant intensity directly in dBi.", 11.5)
 
-    # Bottom Left: Schelkunoff Null Steering
     tf6_3 = create_card_shape(slide6, Inches(0.6), Inches(4.30), Inches(5.92), Inches(2.65),
                               "Schelkunoff Unit-Circle Null Steering", TEAL_ACCENT)
     add_code_formula(tf6_3, "z = exp[ j (k₀ d cosθ + β) ]      AF(z) = a_{N-1} ∏ (z - z_m)", 10.8)
-    add_bullet_point(tf6_3, "Unit-Circle Root Placement:", "Forces exact mathematical zeros directly toward jammer angles.", 11.8)
+    add_bullet_point(tf6_3, "Unit-Circle Roots:", "Places polynomial zeros directly at jammer angles.", 11.8)
     add_bullet_point(tf6_3, "Deep Suppression:", "Achieves >40 dB spatial cancellation (-42.5 dB at θ = 130°).", 11.8)
-    add_bullet_point(tf6_3, "Minimal Boresight Loss:", "Main beam loss is <0.8 dB when null is outside the HPBW cone.", 11.8)
-    add_bullet_point(tf6_3, "SINR Enhancement:", "Output Signal-to-Interference-plus-Noise Ratio jumps by +18.2 dB!", 11.8)
+    add_bullet_point(tf6_3, "Low Boresight Loss:", "<0.8 dB degradation when null is outside HPBW cone.", 11.8)
+    add_bullet_point(tf6_3, "SINR Improvement:", "Jammer suppression yields +18.2 dB link SINR gain.", 11.8)
 
-    # Bottom Right: Amplitude Tapering Windows Table
     create_card_shape(slide6, Inches(6.81), Inches(4.30), Inches(5.92), Inches(2.65),
                       "Amplitude Tapering Windows Comparison", NAVY_PRIMARY)
     taper_headers = ["Taper Window", "Weights", "Peak D₀", "HPBW", "SLL"]
@@ -612,8 +599,8 @@ def build_presentation():
                                "Multi-Port Coupled Network Formulation", NAVY_PRIMARY)
     add_code_formula(tf7_tl, "[V] = [Z] [I]    where [V] = [0, V₂, 0, 0]ᵀ")
     add_bullet_point(tf7_tl, "Parasitic Current Vector:", "[I_p] = - [Z_pp]⁻¹ [Z_p2] I₂ accounts for all mutual reaction fields.", 12.2)
-    add_bullet_point(tf7_tl, "Active Driving Impedance:", "Mutual reaction yields Z_in = 79.66 + j25.90 Ω.", 12.2)
-    add_bullet_point(tf7_tl, "50 Ω Coax Match:", "|Γ| = 0.2978 → VSWR = 1.848 < 2.0 (91.13% of RF power launched).", 12.2)
+    add_bullet_point(tf7_tl, "Active Driving Impedance:", "Mutual reaction sets active impedance Z_in = 79.66 + j25.90 Ω.", 12.2)
+    add_bullet_point(tf7_tl, "50 Ω Coaxial Match:", "|Γ| = 0.298 → VSWR = 1.848 < 2.0 (91.13% of RF power launched).", 12.2)
 
     add_image_card(slide7, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.65),
                    "Coupled RLC Network & Balun Schematic", BLUE_ACCENT,
@@ -639,11 +626,11 @@ def build_presentation():
 
     tf7_br = create_card_shape(slide7, Inches(6.81), Inches(4.15), Inches(5.92), Inches(2.75),
                                "Quarter-Wave Pawsey Coaxial Balun Feed", NAVY_PRIMARY)
-    add_bullet_point(tf7_br, "Unbalanced Feed Issue:", "Coaxial shield currents cause ~15° pattern squint without balun.", 12.2)
+    add_bullet_point(tf7_br, "Shield Current Problem:", "Coax shield currents cause ~15° pattern squint without balun.", 12.2)
     add_bullet_point(tf7_br, "Quarter-Wave RG-316 Stub:", "Parallel λ/4 stub (L = 30.7 mm, v_p = 0.695 c) creates infinite choke:", 12.2)
     add_code_formula(tf7_br, "Z_balun = j Z₀ tan(k₀ λ₀/4) → ∞ Ω   (>25 dB Isolation)")
-    add_bullet_point(tf7_br, "Phase & Current Symmetry:", "Enforces equal & opposite terminal currents (Δθ = 180° ± 1.2°).", 12.2)
-    add_bullet_point(tf7_br, "Pattern Integrity:", "Completely eliminates RF current radiation from the feed cable shield.", 12.2)
+    add_bullet_point(tf7_br, "Current & Phase Symmetry:", "Enforces equal & opposite terminal currents (Δθ = 180° ± 1.2°).", 12.2)
+    add_bullet_point(tf7_br, "Pattern Integrity:", "Completely eliminates RF radiation from the feed cable shield.", 12.2)
 
     # =========================================================================
     # SLIDE 8: Simulation Steps & 4NEC2 Modeling
@@ -684,10 +671,10 @@ def build_presentation():
 
     tf9_tl = create_card_shape(slide9, Inches(0.6), Inches(1.32), Inches(5.92), Inches(2.65),
                                "Return Loss (S11) & Resonant Dip Sweep", NAVY_PRIMARY)
-    add_bullet_point(tf9_tl, "Center Frequency:", "f₀ = 2.440 GHz (Wi-Fi Channel 7 center).", 12.2)
+    add_bullet_point(tf9_tl, "Center Frequency:", "f₀ = 2.440 GHz aligns with Wi-Fi Channel 7 center.", 12.2)
     add_bullet_point(tf9_tl, "Deep Return Loss Dip:", "S11 = -27.80 dB (Simulation) / -10.52 dB (Analytical ULA).", 12.2)
     add_bullet_point(tf9_tl, "Driving VSWR:", "VSWR = 1.085 at 2.44 GHz (Analytical ULA = 1.848 < 2.0).", 12.2)
-    add_bullet_point(tf9_tl, "10-dB Operational Bandwidth:", "2.38 - 2.50 GHz (120 MHz, >4.9% FBW), fully covering Wi-Fi channels 1-14.", 12.2)
+    add_bullet_point(tf9_tl, "Operational Bandwidth:", "2.38 - 2.50 GHz (120 MHz, >4.9% FBW), covering Wi-Fi channels 1-14.", 12.2)
     add_bullet_point(tf9_tl, "Power Transfer:", "Over 99.8% of RF transmitter power is launched into radiated fields.", 12.2)
 
     add_image_card(slide9, Inches(6.81), Inches(1.32), Inches(5.92), Inches(2.65),
@@ -697,7 +684,7 @@ def build_presentation():
     tf9_bl = create_card_shape(slide9, Inches(0.6), Inches(4.15), Inches(5.92), Inches(2.75),
                                "Smith Chart Resonant Impedance Trajectory", TEAL_ACCENT)
     add_code_formula(tf9_bl, "Z_in,sim = 52.1 + j 1.8 Ω    →    |Γ| = 0.027 ∠41°")
-    add_bullet_point(tf9_bl, "Conjugate Match:", "Parasitic reactance tuning delivers a dead-center match to 50 Ω coaxial line.", 12.2)
+    add_bullet_point(tf9_bl, "Conjugate Match:", "Parasitic reactance tuning delivers a dead-center match to 50 Ω coax.", 12.2)
     add_bullet_point(tf9_bl, "No Extra Components:", "Eliminates external lumped LC matching components and insertion losses.", 12.2)
     add_bullet_point(tf9_bl, "Reactance Zero-Crossing:", "Net input reactance crosses zero precisely at 2.438 GHz.", 12.2)
 
@@ -859,7 +846,6 @@ def build_presentation():
     add_styled_table(slide14, Inches(0.6), Inches(1.32), Inches(12.133), Inches(2.75),
                      val_headers, val_rows, val_widths, font_size=10.0, header_bg=NAVY_PRIMARY)
 
-    # Bottom Left: Polar Pattern Image + Bullets
     create_card_shape(slide14, Inches(0.6), Inches(4.25), Inches(5.92), Inches(2.65),
                       "Normalized Polar Radiation Overlay", BLUE_ACCENT)
     if os.path.exists("radiation_pattern_polar.png"):
@@ -874,7 +860,6 @@ def build_presentation():
     add_bullet_point(tf14_1, "Measured Gain:", "7.10 ± 0.6 dBi", 11.5)
     add_bullet_point(tf14_1, "Measured F/B:", "12.40 dB shielding verified.", 11.5)
 
-    # Bottom Right: Taper Comparison Image + Bullets
     create_card_shape(slide14, Inches(6.81), Inches(4.25), Inches(5.92), Inches(2.65),
                       "Amplitude Tapering Verification", TEAL_ACCENT)
     if os.path.exists("taper_comparison.png"):
